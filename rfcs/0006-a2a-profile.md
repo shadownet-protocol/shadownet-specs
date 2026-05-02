@@ -134,7 +134,7 @@ v0.1 error codes:
 | --- | --- | --- |
 | `presentation_required` | 401 | No valid VP cached; supply one. |
 | `presentation_invalid` | 401 | VP failed validation. |
-| `level_insufficient` | 403 | Presented credentials don't meet required level expression. |
+| `level_insufficient` | 403 | Presented credentials don't satisfy the [required-level predicate](./0004-sca.md#required-level-predicates). |
 | `revoked` | 403 | A presented credential is revoked. |
 | `freshness_stale` | 403 | Required freshness proof missing or expired. |
 | `unknown_intent` | 404 | Referenced `intentId` not known to the callee. |

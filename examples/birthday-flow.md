@@ -221,17 +221,17 @@ Sarah's credential was issued 3 days ago; freshness window is 24h. Need a new fr
 ```http
 POST /freshness HTTP/1.1
 Host: sca.shadownet.example
-Authorization: Bearer eyJ…<short-lived JWT signed by Sarah's key>…<sig>
+Authorization: Bearer eyJ…<subject-auth JWT per RFC-0004 §Common>…<sig>
 Content-Type: application/json
 
-{ "credentialJti": "urn:uuid:5b7c1c4a-..." }
+{ "shadownet:v": "0.1", "credentialJti": "urn:uuid:5b7c1c4a-..." }
 ```
 
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
 
-{ "freshnessProof": "eyJ…<sig>" }
+{ "shadownet:v": "0.1", "freshnessProof": "eyJ…<sig>" }
 ```
 
 Decoded freshness JWT:
@@ -373,14 +373,30 @@ Content-Type: application/json
 
 ### 5f. Webhook to Hermes (Sidecar → host agent, local)
 
+Lukas's Sidecar pushes the inbox event to Hermes via the webhook Hermes registered earlier with `social_set_webhook` (RFC-0007 §Inbound notifications):
+
 ```http
 POST /webhooks/a2a-inbox HTTP/1.1
 Host: hermes.localhost:8644
 Content-Type: application/json
-X-Sidecar-Sig: <hmac with Hermes's webhook secret>
+X-Shadownet-Sidecar-Sig: sha256=<hex HMAC-SHA256 of body, key=registered secret>
+X-Shadownet-Sidecar-Ts:  1759200200
+X-Shadownet-Sidecar-Id:  sc-lukas-01
 
-{ "intentId":"urn:uuid:int-001", "from":"ctc_sarah01" }
+{
+  "shadownet:v": "0.1",
+  "event":       "inbox.message",
+  "occurredAt":  1759200200,
+  "data": {
+    "intentId":    "urn:uuid:int-001",
+    "contactId":   "ctc_sarah01",
+    "interaction": "urn:shadownet:int:scheduling.v0-draft",
+    "messageId":   "msg-7c3f"
+  }
+}
 ```
+
+Hermes verifies the HMAC, checks the timestamp is within ±5 min of local time, then calls `social_inbox` to read the actual payload (the webhook deliberately does not carry it).
 
 ## Step 6 — Hermes thinks (local)
 
@@ -514,6 +530,5 @@ The other three host agents (Hermes for Lukas, Claude Desktop for Anna, OpenClaw
 
 - The full Streamable-HTTP MCP framing.
 - TLS handshake details.
-- The signup and CSR ceremony for each user (assumed pre-completed).
-- The exact webhook auth scheme between a Sidecar and its local host agent.
+- The signup proof-flow ceremony — assumed pre-completed; specified in [RFC-0004 §Issuance flow](../rfcs/0004-sca.md#issuance-flow).
 - The interaction-content schema (`scheduling.v0-draft`) — illustrative; will be normative when an Interaction Profile RFC is written.

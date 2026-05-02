@@ -19,5 +19,8 @@
 | Verifier | The party (peer Shadow, Hub, service) that checks a presented credential. |
 | Issuer | An SCA that signs credentials. |
 | Hub | (Later.) Themed stranger-matching server. Out of v0.1. |
+| Predicate | JSON expression describing what a verifier requires of a presentation (see [RFC-0004 §Required-level predicates](./rfcs/0004-sca.md#required-level-predicates)). |
+| Proof session | An on-protocol exchange between a Subject and an SCA used to prove eligibility for a credential level (see [RFC-0004 §Issuance flow](./rfcs/0004-sca.md#issuance-flow)). |
+| CSR | Certificate Signing Request. JWT signed by the Subject; submitted to an SCA's `/issuance` to request a credential. |
 
 Add new terms alphabetically.
