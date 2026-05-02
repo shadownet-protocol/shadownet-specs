@@ -5,10 +5,10 @@ Spec only — reference implementations live in sibling repos.
 ## Layout
 
 - `/rfcs` — proposals (decision trail)
-- `/spec` — current normative spec
 - `/schemas` — JSON Schemas
-- `/diagrams` — Mermaid diagrams
 - `/examples` — worked scenarios
+
+Diagrams live inline in the RFC or example they belong to (Mermaid; renders on GitHub).
 
 ## Filing an RFC
 

@@ -1,13 +1,7 @@
 # Changelog
 
-All notable changes to the Shadownet specification are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the protocol itself is versioned per [`GOVERNANCE.md`](./GOVERNANCE.md#versioning).
-
-Once `RFC-0001 Overview` is accepted, the first protocol release will be tagged **v0.1.0**.
-
 ## [Unreleased]
 
-### Added
-- Initial repository scaffold: `/rfcs`, `/spec`, `/schemas`, `/diagrams`, `/examples`.
-- `RFC-0001 Overview` (draft) — protocol overview seeded from the project README.
-- Birthday-flow worked example and Mermaid sequence diagram.
-- `GLOSSARY.md`, `GOVERNANCE.md`, `CONTRIBUTING.md`.
+- Initial v0.1 RFC set: 0001 Overview, 0002 Identity, 0003 Credentials, 0004 SCA, 0005 SNS, 0006 A2A Profile, 0007 MCP Tools.
+- JSON Schemas for credential and A2A envelope.
+- ROADMAP and wire-level Birthday-flow walkthrough (mixed deployment).
