@@ -36,11 +36,11 @@ sequenceDiagram
     participant LS as Lukas's Sidecar (self-hosted)
     participant SoS as Sofia's Sidecar (self-hosted)
 
-    Note over CD,SoS: Anna omitted in diagram for clarity; identical to Lukas path.
+    Note over CD,SoS: Anna omitted in diagram for clarity - identical to Lukas path.
 
-    Sarah->>CD: "Plan my birthday Sun in a Berlin park with Anna, Lukas, Sofia"
-    CD->>SS: MCP social_contacts / social_send (×3)
-    SS->>SNS1: resolve lukas@…
+    Sarah->>CD: Plan my birthday Sun in a Berlin park with Anna, Lukas, Sofia
+    CD->>SS: MCP social_contacts / social_send (x3)
+    SS->>SNS1: resolve lukas@...
     SNS1-->>SS: signed record
     SS->>SNS2: resolve sofia@sofiacomputing.example
     SNS2-->>SS: signed record
@@ -48,21 +48,21 @@ sequenceDiagram
     SCA-->>SS: freshness JWT
 
     par to each peer
-        SS->>LS: A2A message:send + Bearer + Presentation
+        SS->>LS: A2A message send + Bearer + Presentation
         LS->>SCA: status list (cached, may skip)
-        LS-->>SS: 200 { taskId }
+        LS-->>SS: 200 taskId
         LS->>LS: notify Hermes via webhook
         Note over LS: Hermes runs LLM with local context
-        LS->>SS: A2A message:send (response, role-reversed)
+        LS->>SS: A2A message send (response, role-reversed)
     and
-        SS->>SoS: A2A message:send + Bearer + Presentation
-        SoS-->>SS: 200 { taskId }
-        SoS->>SS: A2A message:send (response)
+        SS->>SoS: A2A message send + Bearer + Presentation
+        SoS-->>SS: 200 taskId
+        SoS->>SS: A2A message send (response)
     end
 
     SS->>CD: notify (inbox has 3 responses)
-    CD->>SS: social_inbox; reconcile → Tiergarten Sun PM
-    CD->>SS: social_send confirm (×3)
+    CD->>SS: social_inbox, reconcile -> Tiergarten Sun PM
+    CD->>SS: social_send confirm (x3)
     CD->>Sarah: approve?
     Sarah-->>CD: approve
     CD->>CD: book on calendar (local)
