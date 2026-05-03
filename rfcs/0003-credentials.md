@@ -34,7 +34,7 @@ A credential is a JWS-protected JWT with `typ: vc+jwt` and `alg: EdDSA`.
 ### Header
 
 ```json
-{ "alg": "EdDSA", "typ": "vc+jwt", "kid": "did:web:sca.shadownet.example#key-1" }
+{ "alg": "EdDSA", "typ": "vc+jwt", "kid": "did:web:sca.sh4dow.org#key-1" }
 ```
 
 `kid` MUST be a DID URL resolving to the issuer's signing key.
@@ -43,7 +43,7 @@ A credential is a JWS-protected JWT with `typ: vc+jwt` and `alg: EdDSA`.
 
 ```json
 {
-  "iss":   "did:web:sca.shadownet.example",
+  "iss":   "did:web:sca.sh4dow.org",
   "sub":   "did:key:z6MkSubjectPubkey...",
   "iat":   1756684800,
   "exp":   1759276800,
@@ -53,7 +53,7 @@ A credential is a JWS-protected JWT with `typ: vc+jwt` and `alg: EdDSA`.
   "vc": {
     "@context": [
       "https://www.w3.org/ns/credentials/v2",
-      "https://shadownet.example/contexts/v1"
+      "https://sh4dow.org/contexts/v1"
     ],
     "type": ["VerifiableCredential", "ShadownetSubjectCredential"],
     "credentialSubject": {
@@ -64,7 +64,7 @@ A credential is a JWS-protected JWT with `typ: vc+jwt` and `alg: EdDSA`.
     "credentialStatus": {
       "type":   "BitstringStatusListEntry",
       "statusListIndex": "12345",
-      "statusListCredential": "https://sca.shadownet.example/status/2026-q3"
+      "statusListCredential": "https://sca.sh4dow.org/status/2026-q3"
     }
   }
 }
@@ -87,7 +87,7 @@ A freshness proof is a small JWT issued by the same SCA, asserting that a specif
 
 ```json
 {
-  "iss": "did:web:sca.shadownet.example",
+  "iss": "did:web:sca.sh4dow.org",
   "sub": "urn:uuid:5b7c1c4a-...",
   "iat": 1759190400,
   "exp": 1759276800,

@@ -4,7 +4,7 @@
 | --- | --- |
 | Shadow | Personal AI agent acting on behalf of one human (or one organization). |
 | Sidecar | Local process that handles networking, keys, and storage for a Shadow. |
-| Shadowname | Human-readable address for a Shadow (e.g. `mahdi@shadownet.example`). |
+| Shadowname | Human-readable address for a Shadow (e.g. `mahdi@sh4dow.org`). |
 | SNS | Shadow Name Service. Resolves a Shadowname to an endpoint and a public key. |
 | SCA | Shadow Certificate Authority. Issues credentials about a Shadow's subject. |
 | A2A | [Google's Agent-to-Agent protocol](https://google.github.io/A2A/). Shadownet defines a profile. |

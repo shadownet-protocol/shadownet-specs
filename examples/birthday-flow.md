@@ -15,10 +15,10 @@ This document is **non-normative**. The interaction-content payload (`urn:shadow
 
 | Person | Shadowname | Sidecar deployment | Host agent | SNS provider | SCA |
 | --- | --- | --- | --- | --- | --- |
-| Sarah | `sarah@shadownet.example` | cloud (`shadow.shadownet.example/u/sarah`) | Claude Desktop | `shadownet.example` | `sca.shadownet.example` |
-| Anna | `anna@shadownet.example` | cloud (`shadow.shadownet.example/u/anna`) | Claude Desktop | `shadownet.example` | `sca.shadownet.example` |
-| Lukas | `lukas@shadownet.example` | self-hosted (`lukas.example/a2a`) | Hermes | `shadownet.example` | `sca.shadownet.example` |
-| Sofia | `sofia@sofiacomputing.example` | self-hosted (`shadow.sofiacomputing.example/a2a`) | OpenClaw | `sofiacomputing.example` | `sca.shadownet.example` |
+| Sarah | `sarah@sh4dow.org` | cloud (`shadow.sh4dow.org/u/sarah`) | Claude Desktop | `sh4dow.org` | `sca.sh4dow.org` |
+| Anna | `anna@sh4dow.org` | cloud (`shadow.sh4dow.org/u/anna`) | Claude Desktop | `sh4dow.org` | `sca.sh4dow.org` |
+| Lukas | `lukas@sh4dow.org` | self-hosted (`lukas.example/a2a`) | Hermes | `sh4dow.org` | `sca.sh4dow.org` |
+| Sofia | `sofia@sofiacomputing.example` | self-hosted (`shadow.sofiacomputing.example/a2a`) | OpenClaw | `sofiacomputing.example` | `sca.sh4dow.org` |
 
 Sofia is on a different **SNS** provider but uses the same **SCA** — the most common federation case in the early ecosystem.
 
@@ -30,9 +30,9 @@ sequenceDiagram
     actor Sarah
     participant CD as Claude Desktop
     participant SS as Sarah's Sidecar (cloud)
-    participant SNS1 as shadownet.example SNS
+    participant SNS1 as sh4dow.org SNS
     participant SNS2 as sofiacomputing.example SNS
-    participant SCA as sca.shadownet.example
+    participant SCA as sca.sh4dow.org
     participant LS as Lukas's Sidecar (self-hosted)
     participant SoS as Sofia's Sidecar (self-hosted)
 
@@ -82,13 +82,13 @@ Sarah's contact entry for Lukas, on the cloud Sidecar:
 ```json
 {
   "id": "ctc_lukas01",
-  "shadowname": "lukas@shadownet.example",
+  "shadowname": "lukas@sh4dow.org",
   "did":        "did:key:z6MkLukasPubkey...",
   "endpoint":   "https://lukas.example/a2a",
   "publicKey":  { "kty":"OKP", "crv":"Ed25519", "x":"<base64url>" },
   "snsRecordExp":  1759200300,
   "subjectType":   "person",
-  "knownSCAs":     ["did:web:sca.shadownet.example"],
+  "knownSCAs":     ["did:web:sca.sh4dow.org"],
   "grants":        ["messaging"]
 }
 ```
@@ -98,7 +98,7 @@ Sarah's trust store on the cloud Sidecar:
 ```json
 {
   "sca": [
-    { "issuer":"did:web:sca.shadownet.example",
+    { "issuer":"did:web:sca.sh4dow.org",
       "acceptedLevels":[
         "urn:shadownet:level:L1",
         "urn:shadownet:level:L2",
@@ -106,7 +106,7 @@ Sarah's trust store on the cloud Sidecar:
       ]}
   ],
   "sns": [
-    { "provider":"did:web:shadownet.example" },
+    { "provider":"did:web:sh4dow.org" },
     { "provider":"did:web:sofiacomputing.example",
       "scope":"contact:ctc_sofia01" }
   ]
@@ -130,7 +130,7 @@ Claude Desktop's plan: coordinate with three contacts. It uses the Shadownet MCP
 ```
 MCP →  social_contacts
          { "query": "anna" }
-MCP ←  { "contacts": [ { "id":"ctc_anna01", "shadowname":"anna@shadownet.example", … } ] }
+MCP ←  { "contacts": [ { "id":"ctc_anna01", "shadowname":"anna@sh4dow.org", … } ] }
 ```
 
 (Two more lookups for Lukas and Sofia, omitted.)
@@ -164,11 +164,11 @@ For each peer, the Sidecar checks its contact entry. If `snsRecordExp` is in the
 
 For this run, assume Anna's record is still fresh (cache hit, no network). Lukas's is stale; Sofia's is stale.
 
-### 3a. Lukas — `shadownet.example` SNS
+### 3a. Lukas — `sh4dow.org` SNS
 
 ```http
-GET /.well-known/sns/v1/resolve?name=lukas@shadownet.example HTTP/1.1
-Host: shadownet.example
+GET /.well-known/sns/v1/resolve?name=lukas@sh4dow.org HTTP/1.1
+Host: sh4dow.org
 Accept: application/jwt
 ```
 
@@ -183,13 +183,13 @@ Decoded:
 
 ```json
 {
-  "iss": "did:web:shadownet.example",
-  "sub": "lukas@shadownet.example",
+  "iss": "did:web:sh4dow.org",
+  "sub": "lukas@sh4dow.org",
   "iat": 1759200000,
   "exp": 1759200300,
   "shadownet:v": "0.1",
   "record": {
-    "shadowname":  "lukas@shadownet.example",
+    "shadowname":  "lukas@sh4dow.org",
     "did":         "did:key:z6MkLukasPubkey...",
     "endpoint":    "https://lukas.example/a2a",
     "publicKey":   { "kty":"OKP", "crv":"Ed25519", "x":"<base64url>" },
@@ -200,7 +200,7 @@ Decoded:
 }
 ```
 
-Sarah's Sidecar verifies the signature against `did:web:shadownet.example`'s key (resolved from `https://shadownet.example/.well-known/did.json`, cached). Updates the contact entry.
+Sarah's Sidecar verifies the signature against `did:web:sh4dow.org`'s key (resolved from `https://sh4dow.org/.well-known/did.json`, cached). Updates the contact entry.
 
 ### 3b. Sofia — different SNS provider
 
@@ -220,7 +220,7 @@ Sarah's credential was issued 3 days ago; freshness window is 24h. Need a new fr
 
 ```http
 POST /freshness HTTP/1.1
-Host: sca.shadownet.example
+Host: sca.sh4dow.org
 Authorization: Bearer eyJ…<subject-auth JWT per RFC-0004 §Common>…<sig>
 Content-Type: application/json
 
@@ -238,12 +238,12 @@ Decoded freshness JWT:
 
 ```json
 {
-  "alg":"EdDSA","typ":"JWT","kid":"did:web:sca.shadownet.example#key-1"
+  "alg":"EdDSA","typ":"JWT","kid":"did:web:sca.sh4dow.org#key-1"
 }
 ```
 ```json
 {
-  "iss": "did:web:sca.shadownet.example",
+  "iss": "did:web:sca.sh4dow.org",
   "sub": "urn:uuid:5b7c1c4a-...",
   "iat": 1759200060,
   "exp": 1759286460,
@@ -344,7 +344,7 @@ In order, fail-fast:
 1. **Parse session token.** `iss` = Sarah's DID. Extract Ed25519 pubkey from `did:key`. Verify EdDSA signature over the JWT. Check `aud` matches Lukas's own DID. Check `exp` not passed.
 2. **Parse VP.** Verify outer signature against same Sarah pubkey (holder = subject for `did:key`). Check `aud`, `exp`. Cache the `nonce` against Sarah's DID for this session.
 3. **For each VC inside the VP**:
-   - Resolve `iss` (`did:web:sca.shadownet.example`) → fetch DID document at `https://sca.shadownet.example/.well-known/did.json` (cached). Verify VC signature against the issuer's key.
+   - Resolve `iss` (`did:web:sca.sh4dow.org`) → fetch DID document at `https://sca.sh4dow.org/.well-known/did.json` (cached). Verify VC signature against the issuer's key.
    - Check `vc.credentialSubject.id` equals the VP's `iss` (the credential is about the holder).
    - Look up `iss` in Lukas's SCA trust store. ✓ accepted.
    - Look up `vc.credentialSubject.level` in `acceptedLevels`. ✓ `L2` is accepted.
@@ -429,7 +429,7 @@ Same handshake, roles flipped. Lukas mints a session token (`iss`=Lukas, `aud`=S
 
 ```http
 POST /u/sarah/a2a/message:send HTTP/1.1
-Host: shadow.shadownet.example
+Host: shadow.sh4dow.org
 Authorization: Bearer eyJ…<session token from Lukas>…
 X-Shadownet-Presentation: eyJ…<Lukas's VP>…
 Content-Type: application/json
@@ -452,9 +452,9 @@ Note the path: `/u/sarah/a2a/...`. Sarah's Sidecar is **multi-tenant cloud** —
 
 ## Step 8 — Anna and Sofia happen in parallel
 
-Anna's path is identical to Lukas's, except: cloud Sidecar to cloud Sidecar (Sarah → Anna). The hop is `https://shadow.shadownet.example/u/anna/a2a/...` — same multi-tenant pattern.
+Anna's path is identical to Lukas's, except: cloud Sidecar to cloud Sidecar (Sarah → Anna). The hop is `https://shadow.sh4dow.org/u/anna/a2a/...` — same multi-tenant pattern.
 
-Sofia's path: cloud Sidecar (Sarah) → self-hosted Sidecar (Sofia) at `https://shadow.sofiacomputing.example/a2a/...`. Sofia's Sidecar performs the **same trust-store work** Lukas's did. Note Sofia's SCA — `sca.shadownet.example` — is in *her* trust store (most users start with the default trust store).
+Sofia's path: cloud Sidecar (Sarah) → self-hosted Sidecar (Sofia) at `https://shadow.sofiacomputing.example/a2a/...`. Sofia's Sidecar performs the **same trust-store work** Lukas's did. Note Sofia's SCA — `sca.sh4dow.org` — is in *her* trust store (most users start with the default trust store).
 
 Anna responds: free, prefers shade.
 Sofia responds: free, proposes Tiergarten.
@@ -500,7 +500,7 @@ The other three host agents (Hermes for Lukas, Claude Desktop for Anna, OpenClaw
 
 ### Trust
 
-- **SCA trust** is in the verifier's trust store. Sarah trusts `sca.shadownet.example`; if Sofia's credential were issued by an SCA Sarah doesn't trust, Sarah's Sidecar would reject the handshake with `presentation_invalid`.
+- **SCA trust** is in the verifier's trust store. Sarah trusts `sca.sh4dow.org`; if Sofia's credential were issued by an SCA Sarah doesn't trust, Sarah's Sidecar would reject the handshake with `presentation_invalid`.
 - **SNS trust** uses scoped trust-on-first-use for non-default providers (Sofia's `sofiacomputing.example`). A new provider for the same contact would prompt re-confirmation.
 - **TLS / Web PKI trust** is delegated to the OS/system CA store. `lukas.example` must serve a valid TLS cert for Sarah's Sidecar to even open the connection.
 

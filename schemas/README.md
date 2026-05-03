@@ -14,4 +14,4 @@ JSON Schema draft 2020-12. Each schema is referenced from at least one RFC.
 
 ## `$id`
 
-`https://shadownet.example/schemas/v<MAJOR>/<path>.schema.json`. Domain is a placeholder until chosen.
+`https://sh4dow.org/schemas/v<MAJOR>/<path>.schema.json`.
