@@ -8,3 +8,4 @@
 - RFC-0004: on-protocol proof flow (`/proof/start`, `/proof/status`, callbacks), `/freshness` request format, required-level predicate grammar.
 - RFC-0004: clarified that proof `method` URIs are operator-defined; the protocol does not enumerate methods.
 - RFC-0007: Sidecar→host-agent webhook contract (HMAC, replay window, retries) and `social_set_webhook` tool.
+- Canonical domain landed: `sh4dow.org`. All `shadownet.example` placeholders replaced across spec, schemas, and example.
