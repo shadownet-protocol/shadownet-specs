@@ -28,7 +28,7 @@ A protocol for personal AI agents (**Shadows**) to discover each other, prove th
 | [`shadownet-go`](https://github.com/shadownet-protocol/shadownet-go) | 🟢 Active | Go SDK + reference SCA, SNS, and CLI binaries. |
 | [`shadownet-py`](https://github.com/shadownet-protocol/shadownet-py) | 🟢 Active | Python SDK; consumed by `hermes-social` and `shadownet-cloud`. |
 | [`hermes-social`](https://github.com/meghancampbel9/hermes-social) | 🟢 Active | Sidecar reference implementation. Drop-in for any A2A-capable agent runtime. |
-| [`shadownet-conformance`](https://github.com/shadownet-protocol/shadownet-conformance) | 🌱 Early | Cross-impl wire-level test suite. |
+| [`shadownet-conformance`](https://github.com/shadownet-protocol/shadownet-conformance) | 🟢 Active | Cross-impl wire-level test suite. |
 | `shadownet-ts` | 🟡 Planned | TypeScript SDK for browser + Node. |
 | `shadownet-cloud` | 🟡 Planned | First-provider deployment: signup, addressing, hosted Sidecars. |
 
