@@ -66,10 +66,12 @@ Sends a Shadownet-enveloped message over A2A.
 
 ```
 input:  {
-  contactId:   string,
-  interaction: string,                 ; URI per RFC-0006 envelope
-  intentId?:   string,                 ; new intent if absent
-  payload:     object                  ; opaque to the Sidecar
+  contactId:    string,
+  intentId?:    string,                 ; new intent if absent
+  interaction?: string,                 ; OPTIONAL URI per RFC-0006 envelope; omit for free-form text
+  payload:      object                  ; opaque to the Sidecar; per RFC-0006:
+                                        ;   - free-form: { text: string, hints?: object }
+                                        ;   - typed:     schema set by `interaction`
 }
 output: { intentId, taskId }
 ```

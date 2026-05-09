@@ -89,17 +89,51 @@ A2A messages carry `parts` of various `type`s. Shadownet adds one part type:
   "mediaType": "application/json",
   "data": {
     "shadownet:v":   "0.1",
-    "intentId":      "urn:uuid:...",          ; correlates messages within an intent
+    "intentId":      "urn:uuid:...",          ; correlates messages within a coordination
     "sessionId":     "urn:uuid:...",          ; correlates within an A2A task
-    "interaction":   "urn:shadownet:int:scheduling.v1",  ; opaque to this RFC
-    "payload":       { ... }                  ; interaction-specific
+    "interaction":   "urn:shadownet:int:scheduling.v1",  ; OPTIONAL; advisory hint
+    "payload":       { ... }                  ; see below
   }
 }
 ```
 
-`interaction` is a URI naming an Interaction Profile (defined in later RFCs, e.g. scheduling, intro). v0.1 verifiers MUST NOT reject messages on the basis of an unknown `interaction`; they MAY surface them to the host agent as opaque.
+### Default form: free-form text
 
-`payload` is opaque to this RFC. Interaction Profiles define its schema.
+The default Shadownet payload is natural language. When `interaction` is absent, `payload` SHOULD be a JSON object containing at least a `text` field carrying the human-readable message, plus any structured hints the sender chooses to attach:
+
+```json
+{
+  "shadownet:v": "0.1",
+  "intentId":    "urn:uuid:...",
+  "payload": {
+    "text": "Hey — want to grab dinner Thursday or Friday next week?",
+    "hints": { "deadline": "2026-05-15T17:00:00Z" }     ; optional, sender-defined
+  }
+}
+```
+
+Receivers MUST be able to handle this form. The receiving Shadow's host agent is expected to interpret `text` (typically with an LLM) and respond in kind. This is the form most v0.1 coordination is expected to take.
+
+### Typed form: Interaction Profile
+
+When both peers benefit from a machine-checkable schema (calendar slots, payment terms, structured forms), the sender MAY set `interaction` to a URI naming an **Interaction Profile** (defined in separate RFCs — e.g. scheduling, intro). In that case `payload` follows the schema set by that profile:
+
+```json
+{
+  "shadownet:v": "0.1",
+  "intentId":    "urn:uuid:...",
+  "interaction": "urn:shadownet:int:scheduling.v1",
+  "payload":     { ... profile-defined ... }
+}
+```
+
+Typed profiles are an **opt-in optimization** for cases where structure prevents ambiguity (timezones, currencies, identifiers). They are not the default and the protocol does not require any particular profile to be supported.
+
+### Verifier obligations
+
+- Verifiers MUST accept envelopes with no `interaction` and surface the `payload` (typically `text`) to the host agent.
+- Verifiers MUST NOT reject envelopes solely because `interaction` names an unknown profile; they MUST surface the `payload` to the host agent as opaque, and MAY include the unrecognized `interaction` URI as a hint.
+- Verifiers MAY reject envelopes whose `payload` fails validation against a *known* `interaction` profile they have chosen to enforce.
 
 ## Async and offline
 
@@ -138,6 +172,7 @@ v0.1 error codes:
 | `revoked` | 403 | A presented credential is revoked. |
 | `freshness_stale` | 403 | Required freshness proof missing or expired. |
 | `unknown_intent` | 404 | Referenced `intentId` not known to the callee. |
+| `payload_invalid` | 400 | `payload` failed validation against a known `interaction` profile the callee chose to enforce. |
 | `rate_limited` | 429 | Too many requests. |
 | `peer_offline` | 503 | Sidecar reachable but Subject's host agent is unreachable. |
 
