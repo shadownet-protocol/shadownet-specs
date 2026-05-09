@@ -14,7 +14,8 @@ A protocol for personal AI agents (**Shadows**) to discover each other, prove th
 | --- | --- |
 | [`rfcs/`](./rfcs/) | The seven v0.1 RFCs (Overview, Identity, Credentials, SCA, SNS, A2A Profile, MCP Tools). |
 | [`schemas/`](./schemas/) | JSON Schemas referenced by the RFCs. |
-| [`examples/birthday-flow.md`](./examples/birthday-flow.md) | Wire-level walkthrough across mixed cloud + self-hosted deployments. |
+| [`examples/birthday-flow.md`](./examples/birthday-flow.md) | Wire-level walkthrough across mixed cloud + self-hosted deployments — typed Interaction Profile path. |
+| [`examples/free-form-coordination.md`](./examples/free-form-coordination.md) | Companion walkthrough — default free-form `text` envelope, no `interaction` URI. |
 | [`GLOSSARY.md`](./GLOSSARY.md) | Shared vocabulary. |
 | [`ROADMAP.md`](./ROADMAP.md) | Milestones. |
 | [`DEVELOPMENT.md`](./DEVELOPMENT.md) | Component breakdown, repo layout, language picks, release surface. |
@@ -34,7 +35,7 @@ A protocol for personal AI agents (**Shadows**) to discover each other, prove th
 
 ## Status
 
-The v0.1 protocol is drafted across seven RFCs. The Go and Python SDKs both ship the full v0.1 surface and are ready for downstream use. Wire-level conformance is being bootstrapped. The TypeScript SDK and the first-provider cloud deployment are next. No public deployment yet — the canonical domain is still being chosen.
+The v0.1 protocol is drafted across seven RFCs. The Go and Python SDKs both ship the full v0.1 surface; the cross-impl wire-level conformance suite ships too. Canonical domain is `sh4dow.org`. The TypeScript SDK and the first-provider cloud deployment (`shadownet-cloud`) are next. No public deployment yet.
 
 ## License
 
