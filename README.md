@@ -24,18 +24,22 @@ A protocol for personal AI agents (**Shadows**) to discover each other, prove th
 
 ## Implementations
 
-| Repo | Status | What it is |
+The Go SDK, Python SDK, conformance suite, and host-agent integrations have consolidated into a single monorepo, [`shadownet-protocol/shadownet`](https://github.com/shadownet-protocol/shadownet). Each subtree releases independently. `shadownet-specs` stays separate by design — different audience, different cadence, different governance.
+
+| Repo / subtree | Status | What it is |
 | --- | --- | --- |
-| [`shadownet-go`](https://github.com/shadownet-protocol/shadownet-go) | 🟢 Active | Go SDK + reference SCA, SNS, and CLI binaries. |
-| [`shadownet-py`](https://github.com/shadownet-protocol/shadownet-py) | 🟢 Active | Python SDK; consumed by `hermes-social` and `shadownet-cloud`. |
+| [`shadownet/core/`](https://github.com/shadownet-protocol/shadownet/tree/main/core) | 🟢 Active | Go SDK + reference SCA, SNS, and CLI binaries. Module path: `github.com/shadownet-protocol/shadownet/core`. |
+| [`shadownet/python-sdk/`](https://github.com/shadownet-protocol/shadownet/tree/main/python-sdk) | 🟢 Active | Python SDK. PyPI distribution: `shadownet`. Consumed by `hermes-social`. |
+| [`shadownet/conformance/`](https://github.com/shadownet-protocol/shadownet/tree/main/conformance) | 🟢 Active | Cross-impl wire-level test suite. PyPI: `shadownet-conformance`; Action: `shadownet-protocol/conformance-action@v0.1`. |
+| [`shadownet/integrations/`](https://github.com/shadownet-protocol/shadownet/tree/main/integrations) | 🟢 Active | Host-agent integrations (Claude Code, Hermes Agent, OpenClaw plugins, skill bundles). |
+| `shadownet/ts-sdk/` *(planned)* | 🟡 Planned | TypeScript SDK for browser + Node. Will live in the monorepo. |
 | [`hermes-social`](https://github.com/meghancampbel9/hermes-social) | 🟢 Active | Sidecar reference implementation. Drop-in for any A2A-capable agent runtime. |
-| [`shadownet-conformance`](https://github.com/shadownet-protocol/shadownet-conformance) | 🟢 Active | Cross-impl wire-level test suite. |
-| `shadownet-ts` | 🟡 Planned | TypeScript SDK for browser + Node. |
-| `shadownet-cloud` | 🟡 Planned | First-provider deployment: signup, addressing, hosted Sidecars. |
+
+Legacy repos (`shadownet-go`, `shadownet-py`, `shadownet-conformance`) remain readable as the canonical source of the `v0.1.x` release series; new feature work, bug fixes, and security advisories ship from the monorepo.
 
 ## Status
 
-The v0.1 protocol is drafted across seven RFCs. The Go and Python SDKs both ship the full v0.1 surface; the cross-impl wire-level conformance suite ships too. Canonical domain is `sh4dow.org`. The TypeScript SDK and the first-provider cloud deployment (`shadownet-cloud`) are next. No public deployment yet.
+The v0.1 protocol is drafted across seven RFCs. The Go and Python SDKs both ship the full v0.1 surface; the cross-impl wire-level conformance suite ships too. Canonical domain is `sh4dow.org`. The TypeScript SDK is next. No public deployment yet.
 
 ## License
 
