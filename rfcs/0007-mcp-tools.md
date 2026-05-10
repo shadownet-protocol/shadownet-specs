@@ -215,6 +215,16 @@ After attempt 5, the Sidecar SHOULD mark the webhook as **degraded** and continu
 
 Future events are added by name; v0.1 host agents MUST ignore unrecognised event types rather than failing.
 
+#### Compatibility headers
+
+Sidecars MAY emit additional compatibility headers that carry the same HMAC-SHA256 in alternate formats demanded by other webhook ecosystems. When such headers are emitted:
+
+- The canonical `X-Shadownet-Sidecar-Sig`, `-Ts`, and `-Id` headers MUST still be emitted.
+- Receivers validating only a compatibility header MUST also verify `X-Shadownet-Sidecar-Ts` is within ±5 minutes of local time, OR explicitly accept the loss of replay defense (e.g., behind a documented config flag).
+- Sender configuration enabling compatibility headers SHOULD log a one-line warning at startup naming the safety property being bypassed.
+
+A widely-supported example is `X-Webhook-Signature: <hex HMAC-SHA256 of body, key=secret>` — raw hex, no prefix — used by [Hermes Agent webhooks](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/webhooks), OpenClaw plugins, and similar generic-HMAC adapters. The spec endorses no specific compatibility header; the pattern is what's normative.
+
 ## Open questions
 
 - Whether to define a tool for adjusting the trust store (`social_trust_add`, `social_trust_remove`) or leave that to a separate config/UI surface.

@@ -9,6 +9,7 @@
 - RFC-0004: clarified that proof `method` URIs are operator-defined; the protocol does not enumerate methods.
 - RFC-0007: Sidecar→host-agent webhook contract (HMAC, replay window, retries) and `social_set_webhook` tool.
 - Canonical domain landed: `sh4dow.org`. All `shadownet.example` placeholders replaced across spec, schemas, and example.
+- RFC-0007: added §Compatibility headers under §Inbound notifications. Sidecars MAY emit additional HMAC headers in alternate formats (e.g. `X-Webhook-Signature`) for ecosystem interop; canonical headers remain mandatory; receivers using only a compatibility header MUST still verify `X-Shadownet-Sidecar-Ts` for replay defense (or explicitly accept the loss).
 - RFC-0006: `interaction` is now OPTIONAL. Default envelope form is free-form text (`payload.text` + optional `hints`); typed Interaction Profiles become an opt-in optimization for cases where structure prevents ambiguity. Schema updated; new `payload_invalid` error code added for callees that choose to enforce a known profile.
 - RFC-0007: `social_send` `interaction` argument is now optional, mirroring RFC-0006. Payload guidance documents free-form vs. typed shapes.
 - New example `examples/free-form-coordination.md`: companion walkthrough showing the default text-payload envelope (the Birthday flow remains the typed-path example).
