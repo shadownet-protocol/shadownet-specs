@@ -85,6 +85,43 @@ input:  { since?: timestamp, interaction?: string, contactId?: string, limit?: n
 output: { items: [{ id, contactId, intentId, interaction, payload, receivedAt }] }
 ```
 
+### `social_inbox_wait`
+
+Long-polls for inbox events. Holds the call open until events arrive or the timeout elapses. Suitable for host agents that cannot host an inbound HTTPS webhook (laptops, MCP-only runtimes) and for hosts whose MCP SDK does not dispatch the [`notifications/shadownet/*`](#path-1-mcp-server-initiated-notification-in-band) namespace.
+
+```
+input:  {
+  timeout_seconds?: integer,         ; default 30; server clamps to ≤ 90
+  last_event_id?:   string | null    ; default null = "deliver events from now on"
+}
+output: {
+  events:        [{ event_id, event, occurredAt, data }],
+  next_event_id: string | null
+}
+```
+
+`event` and `data` shapes MUST match the corresponding entry in [§ Events](#events). `event_id` is **opaque** to clients — host agents MUST NOT parse it, compare it ordinally, or otherwise interpret its contents. The only normative operation is to pass the most recently received value back as `last_event_id` on the next call.
+
+Cross-transport dedupe: the same event delivered via the webhook path ([§ Path 2](#path-2-webhook-out-of-band)) and `social_inbox_wait` MUST carry byte-identical `event_id` strings. Host agents receiving the same event on both transports dedupe by string equality on `event_id`.
+
+#### Server behavior
+
+- If events newer than `last_event_id` are queued, return them immediately with `next_event_id` set to the most recent delivered id.
+- Otherwise, park the call on a per-tenant condition for up to `min(timeout_seconds, 90)` seconds; wake on new events or timeout.
+- On timeout with no new events, return `{ events: [], next_event_id: <current high-water mark> }`. The high-water mark is the most recent `event_id` the Sidecar has issued for this tenant, regardless of whether the client has seen it. If the tenant has never had an event, `next_event_id` is `null` (symmetric with the input default).
+- Sidecars SHOULD retain enough history to support cursor resumption across short disconnects (RECOMMENDED: at least 5 minutes or 100 events per tenant). When a client presents a `last_event_id` older than the retained window, the Sidecar MUST return events from the oldest available point; clients detect the gap by noticing the returned events do not start where they expected.
+
+#### Client behavior
+
+- The host agent SHOULD run this loop in a background worker — not from the LLM's reasoning loop. The tool is transport, not deliberation.
+- The host agent SHOULD mark this tool `disable-model-invocation` (or the host's equivalent) so the LLM does not invoke it.
+- The host agent MUST re-invoke immediately after each successful return (no inter-call sleep on success). The server-side timeout clamp provides the natural pacing.
+- On transport error: exponential backoff RECOMMENDED, starting ~1 s, capped ~30 s, with up to 25% jitter.
+
+#### Coexistence with webhooks
+
+A tenant MAY have both a webhook subscriber and an active `social_inbox_wait` consumer. The Sidecar delivers each event to both channels; receivers dedupe by `event_id`. Most host agents will choose one path — plugins SHOULD make the two mutually exclusive in their default configuration to avoid double processing.
+
 ### `social_respond`
 
 Responds within an existing intent.
@@ -143,11 +180,26 @@ To unregister, call with `url: ""`. The Sidecar persists the registration and re
 
 ## Inbound notifications
 
-Two push paths are defined; a Sidecar MUST support at least one. Hosts that subscribe to neither MUST poll `social_inbox`.
+Three delivery paths are defined. A Sidecar MUST support at least one:
+
+1. **MCP notifications** — server-initiated push on the existing MCP channel (Path 1, below).
+2. **Webhook** — out-of-band HTTPS push to a host-agent-controlled URL (Path 2).
+3. **Long-poll** — host-agent-driven via [`social_inbox_wait`](#social_inbox_wait) (Path 3).
+
+Host agents that subscribe to none of the above MUST fall back to one-shot polling of [`social_inbox`](#social_inbox).
 
 ### Path 1: MCP server-initiated notification (in-band)
 
-Sidecars that implement [MCP server-initiated notifications](https://modelcontextprotocol.io/) SHOULD send a `shadownet/inbox` notification on new inbound activity. Payload mirrors the webhook event payload (below) minus the HMAC headers.
+Sidecars that implement [MCP server-initiated notifications](https://modelcontextprotocol.io/) SHOULD push notifications in the `notifications/shadownet/` namespace on new inbound activity — one method per event name from [§ Events](#events):
+
+- `notifications/shadownet/inbox.message`
+- `notifications/shadownet/task.update`
+- `notifications/shadownet/freshness.expired`
+- `notifications/shadownet/presentation.failed`
+
+Notification params mirror the corresponding webhook `data` shape (below) plus an `event_id` field that MUST be byte-identical to the `event_id` the same event would carry via [`social_inbox_wait`](#social_inbox_wait) or the webhook path. This is how host agents that consume more than one transport dedupe.
+
+Sidecars emitting these notifications SHOULD advertise the `mcp-notifications` capability in their [integration bundle](./0008-onboarding.md#capability-flags). Host agents are responsible for confirming their MCP SDK dispatches these notification methods; SDKs that validate against a closed notification union will silently drop them, in which case the host agent SHOULD use Path 3 instead.
 
 ### Path 2: Webhook (out-of-band)
 
@@ -164,6 +216,7 @@ X-Shadownet-Sidecar-Id:  <opaque Sidecar instance id>
 
 {
   "shadownet:v": "0.1",
+  "event_id":    "01HQZX...",
   "event":       "inbox.message",
   "occurredAt":  1759200200,
   "data": {
@@ -175,6 +228,8 @@ X-Shadownet-Sidecar-Id:  <opaque Sidecar instance id>
 }
 ```
 
+`event_id` is opaque to receivers and MUST be byte-identical to the `event_id` the same event would carry via [`social_inbox_wait`](#social_inbox_wait) or a Path 1 notification. Receivers dedupe across transports by string equality on this field.
+
 The webhook payload deliberately does NOT carry the message *content* — the host agent is expected to call `social_inbox` for the actual payload. This keeps the webhook small, replay-safe, and avoids leaking content into webhook logs.
 
 #### Receiver requirements
@@ -184,7 +239,7 @@ The host agent MUST:
 1. Verify the HMAC. Compare `X-Shadownet-Sidecar-Sig` (after stripping the `sha256=` prefix) against `HMAC-SHA256(secret, body)`.
 2. Reject deliveries whose `X-Shadownet-Sidecar-Ts` differs from local time by more than 5 minutes (replay defense).
 3. Respond `2xx` on accepted delivery; any other status (including `5xx`) triggers retry.
-4. Be idempotent on `messageId` (a delivery may arrive more than once due to retries).
+4. Be idempotent on `event_id` (a delivery may arrive more than once due to retries, and the same event MAY also arrive via another path).
 
 #### Retries
 
