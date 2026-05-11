@@ -40,6 +40,10 @@ The token already identifies the Subject's tenant; no path parameter is required
 
 #### Response (200 OK)
 
+The `did` field follows the DID-method rules in [RFC-0002](./0002-identity.md): individuals MUST be served `did:key`; organizations MUST be served `did:web`. Serving `did:web` for an individual or `did:key` for an organization is a protocol violation. Two representative shapes:
+
+**Individual Subject** (`did:key`):
+
 ```json
 {
   "shadownet:v": "0.1",
@@ -54,7 +58,21 @@ The token already identifies the Subject's tenant; no path parameter is required
 }
 ```
 
-For organizational Subjects (per [RFC-0002 § did:web](./0002-identity.md#did-web--organizations)) the `did` is a `did:web:` value. For individuals it MUST be a `did:key:` value; serving `did:web:` for an individual is a protocol violation.
+**Organizational Subject** (`did:web`):
+
+```json
+{
+  "shadownet:v": "0.1",
+  "did": "did:web:acme.sh4dow.org",
+  "shadowname": "events@acme.sh4dow.org",
+  "mcp_endpoint": "https://acme.sh4dow.org/u/events/mcp",
+  "webhook_secret": null,
+  "supported_features": ["mcp", "webhook", "bundle", "connect-url"],
+  "tool_names": ["social_send", "social_inbox", "social_set_webhook", "..."],
+  "event_names": ["inbox.message", "task.update", "freshness.expired", "presentation.failed"],
+  "version": "0.3.0"
+}
+```
 
 #### Field semantics
 
@@ -142,7 +160,7 @@ Handoff codes are single-use and time-limited. RECOMMENDED TTL is 15 minutes —
 
 ##### Reserved field
 
-The field name `client_nonce` is reserved on the handoff request body for a future signed-echo variant (where the server cryptographically attests the redemption back to the client). v0.1 clients MUST NOT send `client_nonce`; v0.1 servers MUST ignore it if present. Implementations relying on it for replay defense today get no security benefit — the server-side single-use property is the only normative guarantee.
+The field name `client_nonce` is reserved on the handoff request body. v0.1 clients MUST NOT send `client_nonce`; v0.1 servers MUST ignore it if present. Future RFC versions MAY assign semantics to this field — the most likely shape is a signed-echo variant where the server cryptographically attests the redemption back to the client — and the name is reserved against unrelated reuse to keep that path open. Implementations relying on `client_nonce` for replay defense today get no security benefit; the server-side single-use property is the only normative guarantee at v0.1.
 
 #### Constraints
 
@@ -175,6 +193,8 @@ These endpoints REQUIRE `Authorization: Bearer <account-token>` (so the snippet 
 | `text/html` (default for browsers) | A friendly install page: copy-button-styled snippet, link to the host's docs, "next steps" checklist. |
 | `text/plain` | The raw copy-pasteable snippet only — suitable for `curl`/`wget` flows. |
 | `application/json` | A structured representation appropriate to the host (e.g., `{ "mcpServerConfig": { ... } }` for hosts that configure MCP servers via JSON). For `<base>/connect/raw`, this is the canonical bundle. Sidecars SHOULD support `application/json` on every host route to enable automated bootstrap. |
+
+Every `application/json` response from a `<base>/connect/<host>` route — including `raw` — MUST carry a top-level `"shadownet:v": "0.1"` field. This is the minimum contract generic automation can rely on to confirm the response is a Shadownet onboarding payload regardless of host. Host-specific fields sit alongside it; the canonical bundle at `raw` already satisfies the requirement via the bundle's own `shadownet:v`.
 
 #### Snippet content per host
 
