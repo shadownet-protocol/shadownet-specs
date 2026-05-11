@@ -18,3 +18,4 @@ Numbered proposals. Copy `0000-template.md` to the next free number and open a P
 | [0005](./0005-sns.md) | Shadow Name Service | 📝 Draft |
 | [0006](./0006-a2a-profile.md) | Shadownet Profile of A2A | 📝 Draft |
 | [0007](./0007-mcp-tools.md) | MCP Control Surface for Shadows | 📝 Draft |
+| [0008](./0008-onboarding.md) | Sidecar Onboarding Surface | 📝 Draft |
