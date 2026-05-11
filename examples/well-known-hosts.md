@@ -17,12 +17,12 @@ The set of `<host>` values a Sidecar may serve from [`<base>/connect/<host>`](..
 
 ## Content shapes
 
-For each slug, the Sidecar's response varies by `Accept` header per [RFC-0008 § Content negotiation](../rfcs/0008-onboarding.md#content-negotiation). Notes per host:
+For each slug, the Sidecar's response varies by `Accept` header per [RFC-0008 § Content negotiation](../rfcs/0008-onboarding.md#content-negotiation). Every `application/json` response below MUST also carry a top-level `"shadownet:v": "0.1"` (the universal marker required by RFC-0008); only the host-specific portion is shown for brevity.
 
-- `hermes-agent`, `openclaw`: `application/json` returns `{ "configSchema": { ... } }` — the same shape the plugin's CLI prompts answer.
-- `claude-code`, `cursor`: `application/json` returns `{ "mcpServerConfig": { ... } }` — a single MCP server entry the host can drop into its settings file.
-- `continue`: `application/json` returns `{ "yaml": "<rendered yaml>" }`. (YAML in a JSON string is awkward; Continue's config is YAML-only today.)
-- `raw`: `application/json` is the canonical bundle. `text/plain` and `text/html` are RECOMMENDED but not required.
+- `hermes-agent`, `openclaw`: `application/json` returns `{ "shadownet:v": "0.1", "configSchema": { ... } }` — the inner shape matches the plugin's CLI prompts.
+- `claude-code`, `cursor`: `application/json` returns `{ "shadownet:v": "0.1", "mcpServerConfig": { ... } }` — a single MCP server entry the host can drop into its settings file.
+- `continue`: `application/json` returns `{ "shadownet:v": "0.1", "yaml": "<rendered yaml>" }`. (YAML in a JSON string is awkward; Continue's config is YAML-only today.)
+- `raw`: `application/json` is the canonical integration bundle, which already includes `shadownet:v`. `text/plain` and `text/html` are RECOMMENDED but not required.
 
 ## Adding a host
 
