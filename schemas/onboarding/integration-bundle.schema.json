@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sh4dow.org/schemas/v0/onboarding/integration-bundle.schema.json",
+  "title": "Shadownet Integration Bundle",
+  "description": "Response body of GET <base>/v1/account/me/integration-bundle. See RFC-0008.",
+  "type": "object",
+  "required": [
+    "shadownet:v",
+    "did",
+    "shadowname",
+    "mcp_endpoint",
+    "webhook_secret",
+    "supported_features",
+    "tool_names",
+    "event_names",
+    "version"
+  ],
+  "properties": {
+    "shadownet:v": { "const": "0.1" },
+    "did": {
+      "type": "string",
+      "pattern": "^did:(key|web):",
+      "description": "Tenant DID. did:key for individuals, did:web for organizations (RFC-0002)."
+    },
+    "shadowname": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]{1,63}@[A-Za-z0-9.-]+$",
+      "description": "local@provider form per RFC-0005."
+    },
+    "mcp_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "webhook_secret": {
+      "type": ["string", "null"],
+      "description": "Pre-provisioned HMAC secret, or null if no subscriber is registered."
+    },
+    "supported_features": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Capability flags. RFC-0008 § Capability flags defines the v0.1 set; clients tolerate unknown future values."
+    },
+    "tool_names": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "event_names": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "version": {
+      "type": "string",
+      "description": "Sidecar implementation version (free-form, semver RECOMMENDED). Not the protocol version."
+    }
+  },
+  "additionalProperties": false
+}
