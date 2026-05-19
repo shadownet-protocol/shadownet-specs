@@ -100,6 +100,7 @@ The normative set at v0.1, extensible:
 | `connect-url` | Sidecar accepts `shadownet://connect` URLs (§ Connect URL scheme). |
 | `inbox-wait` | The `social_inbox_wait` MCP tool is implemented ([RFC-0007 § social_inbox_wait](./0007-mcp-tools.md#social_inbox_wait)). |
 | `mcp-notifications` | Sidecar emits the `notifications/shadownet/*` namespace on the MCP channel ([RFC-0007 § Path 1](./0007-mcp-tools.md#path-1-mcp-server-initiated-notification-in-band)). |
+| `oauth-authorize` | Sidecar implements the OAuth 2.1 authorization profile in [RFC-0009](./0009-authorization.md). When set, the bundle MUST also include the `protected_resource_metadata` field naming the RFC 9728 PRM URL for this tenant. |
 
 Clients MUST tolerate unknown future flags (forward compatibility). A flag's absence means the Sidecar does not advertise that capability — clients MUST NOT call the corresponding surface.
 

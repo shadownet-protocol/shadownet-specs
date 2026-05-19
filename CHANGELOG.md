@@ -10,6 +10,9 @@
 - RFC-0007: Sidecar→host-agent webhook contract (HMAC, replay window, retries) and `social_set_webhook` tool.
 - Canonical domain landed: `sh4dow.org`. All `shadownet.example` placeholders replaced across spec, schemas, and example.
 - RFC-0007: added §Compatibility headers under §Inbound notifications. Sidecars MAY emit additional HMAC headers in alternate formats (e.g. `X-Webhook-Signature`) for ecosystem interop; canonical headers remain mandatory; receivers using only a compatibility header MUST still verify `X-Shadownet-Sidecar-Ts` for replay defense (or explicitly accept the loss).
+- RFC-0009: new RFC defining the OAuth 2.1 authorization profile for the Sidecar's MCP endpoint. Strict superset of the MCP authorization specification — composes RFC 9728 (Protected Resource Metadata), RFC 8414 (AS Metadata), RFC 7636 (PKCE), RFC 8707 (Resource Indicators), and optionally RFC 7591 (DCR), RFC 7009 (Revocation), RFC 8628 (Device Grant), RFC 7662 (Introspection). Independent conformance class; coexists with RFC-0008 paste-based onboarding.
+- RFC-0007 §Transport: amended to accept OAuth 2.1 access tokens (RFC-0009) as an alternative to RFC-0008 paste-based bearer tokens on the same MCP endpoint.
+- RFC-0008: added `oauth-authorize` capability flag and the optional `protected_resource_metadata` bundle field.
 - RFC-0006: `interaction` is now OPTIONAL. Default envelope form is free-form text (`payload.text` + optional `hints`); typed Interaction Profiles become an opt-in optimization for cases where structure prevents ambiguity. Schema updated; new `payload_invalid` error code added for callees that choose to enforce a known profile.
 - RFC-0007: `social_send` `interaction` argument is now optional, mirroring RFC-0006. Payload guidance documents free-form vs. typed shapes.
 - New example `examples/free-form-coordination.md`: companion walkthrough showing the default text-payload envelope (the Birthday flow remains the typed-path example).

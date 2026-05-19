@@ -18,7 +18,12 @@ The goal is to let any MCP-capable host agent drive a Shadownet Sidecar with no 
 
 Sidecars MUST expose an MCP server over [streamable HTTP](https://modelcontextprotocol.io/) at a configurable endpoint. The reference Sidecar serves it on a separate port from its A2A endpoint.
 
-Authentication between the host agent and the Sidecar is local; v0.1 uses a bearer token issued at Sidecar startup or signup. (For multi-tenant cloud Sidecars, the token authenticates *which* Subject's Shadow the host agent is acting on behalf of.)
+Authentication between the host agent and the Sidecar is by bearer token on the `Authorization` header. The Sidecar MUST accept either:
+
+- A paste-based bearer token obtained through [RFC-0008](./0008-onboarding.md) (typically the account token from the integration bundle or `shadownet://connect` URL); or
+- An OAuth 2.1 access token issued under [RFC-0009](./0009-authorization.md), if the Sidecar advertises the `oauth-authorize` capability.
+
+Token-type detection is a Sidecar implementation concern; both validation paths terminate at the same tenant-scoped MCP session. For multi-tenant Sidecars, the token MUST identify which Subject's Shadow the host agent is acting on behalf of, regardless of token type.
 
 ## Required tools
 
@@ -286,7 +291,7 @@ Sidecars MAY emit additional compatibility headers that carry the same HMAC-SHA2
 - Receivers validating only a compatibility header MUST also verify `X-Shadownet-Sidecar-Ts` is within ±5 minutes of local time, OR explicitly accept the loss of replay defense (e.g., behind a documented config flag).
 - Sender configuration enabling compatibility headers SHOULD log a one-line warning at startup naming the safety property being bypassed.
 
-A widely-supported example is `X-Webhook-Signature: <hex HMAC-SHA256 of body, key=secret>` — raw hex, no prefix — used by [Hermes Agent webhooks](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/webhooks), OpenClaw plugins, and similar generic-HMAC adapters. The spec endorses no specific compatibility header; the pattern is what's normative.
+A widely-supported example is `X-Webhook-Signature: <hex HMAC-SHA256 of body, key=secret>` — raw hex, no prefix — used by [Hermes Agent webhooks](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/webhooks) and similar generic-HMAC adapters. The spec endorses no specific compatibility header; the pattern is what's normative.
 
 ## Open questions
 
