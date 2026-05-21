@@ -524,7 +524,7 @@ The other three host agents (Hermes for Lukas, Claude Desktop for Anna, OpenClaw
 
 - **NAT traversal** isn't part of v0.1. Lukas needs a public TLS endpoint (e.g., port-forwarded through his router, or a tunnel like Cloudflare Tunnel / Tailscale Funnel). Cloud-hosted Sidecars sidestep this.
 - **Cert lifecycle** (Let's Encrypt etc.) is the operator's responsibility.
-- **SQLite WAL** mode SHOULD be enabled (the current `hermes-social` does not by default — `ROADMAP` item).
+- **SQLite WAL** mode SHOULD be enabled (the current Shadownet v0 does not by default — `ROADMAP` item).
 
 ### What this example glosses over
 

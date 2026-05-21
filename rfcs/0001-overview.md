@@ -84,4 +84,4 @@ Wire artifacts (credentials, A2A envelope, SNS records) carry a `shadownet:v` cl
 
 ## Reference implementation
 
-[`hermes-social`](https://github.com/meghancampbel9/hermes-social) implements the Sidecar today (single-tenant; raw-key identity + JWT-EdDSA, no DID/VC yet). Multi-tenant operation, DID/VC migration, and the cloud SCA/SNS service are v0.1 work items in [`ROADMAP.md`](../ROADMAP.md).
+[Shadownet v0](https://github.com/meghancampbel9/shadownet) implements the Sidecar today (single-tenant; raw-key identity + JWT-EdDSA, no DID/VC yet). Multi-tenant operation, DID/VC migration, and the cloud SCA/SNS service are v0.1 work items in [`ROADMAP.md`](../ROADMAP.md).
