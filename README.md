@@ -29,11 +29,11 @@ The Go SDK, Python SDK, conformance suite, and host-agent integrations have cons
 | Repo / subtree | Status | What it is |
 | --- | --- | --- |
 | [`shadownet/core/`](https://github.com/shadownet-protocol/shadownet/tree/main/core) | 🟢 Active | Go SDK + reference SCA, SNS, and CLI binaries. Module path: `github.com/shadownet-protocol/shadownet/core`. |
-| [`shadownet/python-sdk/`](https://github.com/shadownet-protocol/shadownet/tree/main/python-sdk) | 🟢 Active | Python SDK. PyPI distribution: `shadownet`. Consumed by `hermes-social`. |
+| [`shadownet/python-sdk/`](https://github.com/shadownet-protocol/shadownet/tree/main/python-sdk) | 🟢 Active | Python SDK. PyPI distribution: `shadownet`. Consumed by Shadownet v0. |
 | [`shadownet/conformance/`](https://github.com/shadownet-protocol/shadownet/tree/main/conformance) | 🟢 Active | Cross-impl wire-level test suite. PyPI: `shadownet-conformance`; Action: `shadownet-protocol/conformance-action@v0.1`. |
 | [`shadownet/integrations/`](https://github.com/shadownet-protocol/shadownet/tree/main/integrations) | 🟢 Active | Host-agent integrations (Claude Code, Hermes Agent, OpenClaw plugins, skill bundles). |
 | `shadownet/ts-sdk/` *(planned)* | 🟡 Planned | TypeScript SDK for browser + Node. Will live in the monorepo. |
-| [`hermes-social`](https://github.com/meghancampbel9/hermes-social) | 🟢 Active | Sidecar reference implementation. Drop-in for any A2A-capable agent runtime. |
+| [Shadownet v0](https://github.com/meghancampbel9/shadownet) | 🟢 Active | Sidecar reference implementation. Drop-in for any A2A-capable agent runtime. |
 
 Legacy repos (`shadownet-go`, `shadownet-py`, `shadownet-conformance`) remain readable as the canonical source of the `v0.1.x` release series; new feature work, bug fixes, and security advisories ship from the monorepo.
 

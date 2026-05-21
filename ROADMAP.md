@@ -2,7 +2,7 @@
 
 ## Now
 
-- **Sidecar (hermes-social)** — A2A transport, Ed25519 identity, JWT-EdDSA mutual auth, contact graph, per-contact grants, SQLite history, MCP control surface. Single-tenant. Working.
+- **Sidecar (Shadownet v0)** — A2A transport, Ed25519 identity, JWT-EdDSA mutual auth, contact graph, per-contact grants, SQLite history, MCP control surface. Single-tenant. Working.
 - **v0.1 RFC set drafted** — see [`rfcs/`](./rfcs/).
 
 ## v0.1 — known-contact coordination
@@ -17,7 +17,7 @@ Goal: two humans on different machines can ask their Shadows to coordinate somet
 | Code | 2-Shadow scheduling tracer-bullet end-to-end. |
 | Code | 4-Shadow Birthday demo. |
 | Code | Self-hosted Sidecar registration with the cloud SNS. |
-| Code | Enable WAL mode in hermes-social. |
+| Code | Enable WAL mode in Shadownet v0. |
 
 ## Later
 

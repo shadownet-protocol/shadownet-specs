@@ -48,7 +48,7 @@ A Shadow representing a human MUST NOT use `did:web`. A Shadow representing an o
 
 Private keys MUST be generated with a CSPRNG. Implementations SHOULD use the platform key-storage facility (Keychain on macOS, Secret Service on Linux, DPAPI on Windows) when available.
 
-The current `hermes-social` Sidecar persists `private.key` / `public.key` files at mode `0o600` under the data directory. v0.1 Sidecars MAY do the same; SHOULD migrate to platform keystore in subsequent versions.
+The current Shadownet v0 Sidecar persists `private.key` / `public.key` files at mode `0o600` under the data directory. v0.1 Sidecars MAY do the same; SHOULD migrate to platform keystore in subsequent versions.
 
 ## Key rotation
 
