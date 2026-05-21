@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- RFC-0005: added §Lifecycle defining the record time-validity contract. Pins the wire invariant that resolution responses MUST NOT carry a pre-expired envelope, defines two valid provider implementation patterns (re-issuance on resolve vs. store-and-serve), gives normative client-side renewal guidance (re-register before `iat + ttl - max(60, ttl/10)`), and recommends resolvers distinguish expiry from malformedness in their error taxonomy. Recommended default `ttl` raised from the previous ad-hoc 300 s to 3600 s. Wire shape unchanged.
+
 - Initial v0.1 RFC set: 0001 Overview, 0002 Identity, 0003 Credentials, 0004 SCA, 0005 SNS, 0006 A2A Profile, 0007 MCP Tools.
 - JSON Schemas for credential and A2A envelope.
 - Wire-level Birthday-flow walkthrough (mixed deployment).
