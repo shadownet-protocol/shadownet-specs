@@ -141,7 +141,7 @@ A long-running negotiation uses A2A `task` semantics:
 
 - The initiator calls `message:send` (or `message:stream`); the callee returns a `taskId`.
 - The initiator polls `task:get` or subscribes to status changes via `message:stream`.
-- The callee's Sidecar MAY notify the host agent of inbound work via a webhook (this is Shadownet v0's current pattern).
+- The callee's Sidecar MAY notify the host agent of inbound work via a webhook (this is shadownet-local's current pattern).
 
 Offline peers: if SNS resolution succeeds but the endpoint is unreachable, the caller MAY:
 
