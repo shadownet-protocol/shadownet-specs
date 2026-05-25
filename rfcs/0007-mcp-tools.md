@@ -125,14 +125,60 @@ Cross-transport dedupe: the same event delivered via the MCP notification path (
 
 ### `social_respond`
 
-#### Client behavior
-
 Responds within an existing intent.
 
 ```
 input:  { intentId: string, payload: object }
 output: { taskId }
 ```
+
+### `social_coordinate`
+
+Initiates a coordination flow (meetup, meeting, etc.) with a contact. The peer's Shadow negotiates a plan autonomously — the Subject is not interrupted until both agents reach agreement.
+
+```
+input:  {
+  contactId: string,
+  activity:  string,            ; e.g. "coffee", "dinner", "meeting"
+  details?:  string             ; constraints — e.g. "Thursday morning", "downtown"
+}
+output: { intentId, taskId, message: string }
+```
+
+The Sidecar MUST create a `coordination_request` payload conforming to RFC-0006 and dispatch it via A2A. The peer's response arrives asynchronously as an `inbox.message` event with `data_type: "response"`.
+
+After calling this, the host agent SHOULD end its turn and await the inbound event — it MUST NOT poll `social_inbox` in a loop.
+
+### `social_confirm_plan`
+
+Confirms an agreed coordination plan and sends a `confirmation` message to the peer. Called after the Subject approves a proposed plan (the response from a `social_coordinate` flow).
+
+```
+input:  { contactId?: string }            ; if omitted, confirms the most recent pending plan
+output: { confirmed: boolean, plan: object, message: string }
+```
+
+The Sidecar MUST:
+1. Locate the most recent inbound `response` with status `received` for the given contact (or any contact if omitted).
+2. Mark it as `responded`.
+3. Build a `confirmation` payload containing the agreed plan.
+4. Dispatch it to the peer via A2A.
+
+### `social_accept_plan`
+
+Accepts a coordination plan that was proposed by a peer (an inbound `confirmation` message). Called after the Subject says "yes" to an invitation.
+
+```
+input:  { intentId?: string }             ; if omitted, accepts the most recent pending confirmation
+output: { accepted: boolean, message: string }
+```
+
+The Sidecar MUST:
+1. Locate the pending inbound `confirmation` (by `intentId` or most recent).
+2. Mark it as `responded`.
+3. Build a `confirmed` payload and dispatch it to the peer via A2A.
+
+After this tool returns, the coordination is complete on both sides.
 
 ### `social_grant`
 
