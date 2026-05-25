@@ -58,10 +58,15 @@ output: { did, endpoint, publicKey, subjectType, ttl }
 
 ### `social_add_contact`
 
-Adds a resolved entity to the contact graph.
+Adds a resolved entity to the contact graph. Optionally accepts a local-only profile that the Subject (or the host agent at the Subject's direction) attaches to the contact — see [§ Contact profile](#contact-profile).
 
 ```
-input:  { shadowname: string, displayName?: string, grants?: string[] }
+input:  {
+  shadowname:  string,
+  displayName?: string,
+  grants?:     string[],                    ; subset of recognized grant strings (§ social_grant)
+  profile?:    ContactProfile               ; local-only metadata; NEVER transmitted
+}
 output: { id, shadowname, did }
 ```
 
@@ -145,7 +150,14 @@ input:  { contactId: string, grant: string, allowed: boolean }
 output: { ok: true }
 ```
 
-v0.1 defines one grant string: `messaging` (the contact may send messages at all). Future RFCs MAY add scoped grants.
+v0.1 defines two grant strings:
+
+| Grant | Permits |
+| --- | --- |
+| `messaging` | The contact may send messages at all. Required for any inbound from this contact to reach `social_inbox`. |
+| `coordinate` | The contact may initiate negotiations that require structured coordination (calendar, payments, group flows once defined). Implies `messaging`. |
+
+Future RFCs MAY add scoped grants. Verbs that resemble "this contact's introduction of strangers is sufficient" (web-of-trust vouching) are deliberately not defined at v0.1: a leaked grant of that shape becomes a phishing vector, and the gain over surfacing "this contact introduced them" as a UI hint in the quarantine surface is small.
 
 ### `social_identity`
 
@@ -171,6 +183,91 @@ output: { ok: true }
 
 To unregister, call with `url: ""`. The Sidecar persists the registration and replays it after restart.
 
+### `social_quarantine_list`
+
+Lists pending quarantined inbound — items the receiver has held because the sender is not a known contact (per [RFC-0006 §Routing and quarantine](./0006-a2a-profile.md#routing-and-quarantine)). Items returned by this tool MUST NOT have triggered host-agent invocation; their summaries are sender-supplied, not LLM-derived.
+
+```
+input:  { since?: timestamp, limit?: number }
+output: {
+  items: [{
+    quarantineId:    string,
+    senderShadowname: string,
+    senderDid:       string,
+    purpose:         string | null,       ; from hints.purpose, e.g. "invitation"
+    summary:         string,              ; sender-supplied; typically payload.text
+    affiliation:     string | null,       ; sender's affiliation DID if presented, else null
+    introducer:      string | null,       ; sender-claimed introducer DID; UI hint only
+    flags:           string[],            ; e.g. ["rate-limited", "suspected-spam"]
+    receivedAt:      timestamp
+  }]
+}
+```
+
+`flags` is populated by the gateway's rules-only analysis. Recognized values at v0.1: `"rate-limited"`, `"suspected-spam"`, `"unknown-affiliation-issuer"`. Implementations MAY add additional flag strings; host agents MUST tolerate unrecognized flags and SHOULD surface them as-is.
+
+### `social_quarantine_review`
+
+Reviews a quarantined item — accepts (adding the sender to the contact graph) or rejects. Reject + block prevents future inbound from the same sender DID without surfacing it again.
+
+```
+input: {
+  quarantineId: string,
+  decision:     "accept" | "reject" | "reject_and_block",
+  ; on accept:
+  displayName?: string,
+  grants?:      string[],                  ; defaults to ["messaging"]
+  profile?:     ContactProfile             ; local-only; see § Contact profile
+}
+output: {
+  contactId?: string,                       ; present iff decision = "accept"
+  ok: true
+}
+```
+
+On `accept`, the receiver MUST (a) add the sender to the contact graph with the named grants, (b) transition the corresponding A2A task to a state the sender's Shadow can observe as accepted, and (c) deliver the original quarantined payload to `social_inbox` so subsequent host-agent processing can proceed normally.
+
+On `reject` or `reject_and_block`, the receiver MUST transition the sender's task to `failed` with reason `peer_declined`. The sender learns the request was not accepted but receives no detail about why. `reject_and_block` additionally records the sender DID in a local block list so future inbound from the same DID is dropped at the gateway before quarantine.
+
+## Contact profile
+
+A **ContactProfile** is local-only metadata the Subject (or the host agent at the Subject's direction) attaches to a contact. Its purpose is to give the host agent's reasoning loop context about how the Subject thinks of this contact — analogous to the notes a person keeps next to a name in an address book, scaled up so an LLM can use them.
+
+A ContactProfile MUST NOT be transmitted to the contact or to any other peer. It is stored alongside the contact graph entry and surfaced back to the host agent on inbound and outbound that involves this contact (typically via `social_contact_detail`).
+
+### Shape
+
+```json
+{
+  "notes":          "Contractor working with Bob on Project Foo. Respected. Prioritize his messages.",
+  "priority":       "high",
+  "collaborate_on": ["Project Foo", "Y", "Z"],
+  "expires_at":     "2026-08-01T00:00:00Z"
+}
+```
+
+Fields (all OPTIONAL):
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `notes` | string | Free-form text the Subject wrote about the contact. The host agent SHOULD surface this to its reasoning loop as context. Maximum 4 KiB. |
+| `priority` | enum: `low` \| `normal` \| `high` | Routing hint for the host agent: how urgently to surface inbound. Default `normal`. |
+| `collaborate_on` | string array | Topics or projects the Subject has scoped the relationship to. Host agents MAY use these to filter or label inbound. |
+| `expires_at` | RFC 3339 timestamp | Optional auto-archive date. Suitable for contractor relationships and time-bounded collaborations. Sidecars MAY surface a reminder when an expiring contact's date approaches. |
+
+Sidecars MUST persist the profile, surface it via `social_contact_detail`, and never include it in over-the-wire artifacts. Sidecars SHOULD provide an MCP tool to update the profile post-creation; the canonical shape is `social_set_contact_profile` with the same `profile` field as `social_add_contact`.
+
+### `social_set_contact_profile`
+
+Updates the local-only profile on an existing contact.
+
+```
+input:  { contactId: string, profile: ContactProfile }
+output: { ok: true }
+```
+
+A `profile` of `{}` clears all fields. Partial updates are not defined at v0.1; clients SHOULD read the current profile via `social_contact_detail` and submit the full desired state.
+
 ## Optional tools
 
 `social_present` — explicitly trigger a credential presentation to a peer (for testing or unusual flows). Most host agents will never need it; the Sidecar handles presentations automatically during the A2A handshake.
@@ -182,6 +279,8 @@ To unregister, call with `url: ""`. The Sidecar persists the registration and re
 - Tools MUST be idempotent where the operation is naturally idempotent (`social_grant` with the same input yields the same state).
 - The Sidecar MUST log every tool call to local storage (subject to user-controlled retention).
 - The Sidecar MUST NOT silently expand the Subject's exposed data beyond what each tool's input names.
+- **Cost guarantee.** Inbound from a sender that is not a known contact with the `messaging` grant MUST NOT appear in `social_inbox`, MUST NOT trigger any `notifications/shadownet/*` MCP notification beyond optional out-of-band quarantine alerts, and MUST NOT cause the host agent's reasoning loop to be invoked. Such inbound is surfaced exclusively through `social_quarantine_list` until the Subject explicitly reviews it. This is the local enforcement of the [RFC-0006 §Cost guarantee](./0006-a2a-profile.md#cost-guarantee).
+- **Contact profile is local-only.** A `ContactProfile` MUST NOT appear in any over-the-wire artifact (A2A envelope, VP, SNS record, integration bundle, OAuth token, webhook payload). Implementations that synchronize state across multiple Sidecars for the same Subject MAY include profile data in that synchronization channel provided it remains under the Subject's exclusive control.
 
 ## Inbound notifications
 
@@ -209,6 +308,7 @@ Sidecars that implement [MCP server-initiated notifications](https://modelcontex
 - `notifications/shadownet/task.update`
 - `notifications/shadownet/freshness.expired`
 - `notifications/shadownet/presentation.failed`
+- `notifications/shadownet/quarantine.pending`
 
 Notification params mirror the corresponding webhook `data` shape (below) plus an `event_id` field that MUST be byte-identical to the `event_id` the same event would carry via [`social_inbox_wait`](#social_inbox_wait) or the webhook path. This is how host agents that consume more than one transport dedupe.
 
@@ -280,6 +380,7 @@ After attempt 5, the Sidecar SHOULD mark the webhook as **degraded** and continu
 | `task.update` | `{ intentId, contactId, taskId, status }` | A2A task changed status (e.g., peer's `task:get` returned a new state). |
 | `freshness.expired` | `{ contactId, did }` | A cached peer VP is no longer fresh; the next outbound to this contact will renegotiate. |
 | `presentation.failed` | `{ contactId, did, reason }` | Inbound from this contact was rejected during VP validation. |
+| `quarantine.pending` | `{ quarantineId, senderDid, purpose }` | New item placed in quarantine for the Subject's review. Carries no content; host agent retrieves details via `social_quarantine_list`. |
 
 Future events are added by name; v0.1 host agents MUST ignore unrecognised event types rather than failing.
 

@@ -135,6 +135,70 @@ Typed profiles are an **opt-in optimization** for cases where structure prevents
 - Verifiers MUST NOT reject envelopes solely because `interaction` names an unknown profile; they MUST surface the `payload` to the host agent as opaque, and MAY include the unrecognized `interaction` URI as a hint.
 - Verifiers MAY reject envelopes whose `payload` fails validation against a *known* `interaction` profile they have chosen to enforce.
 
+## Routing and quarantine
+
+A Shadownet receiver MUST classify every inbound A2A request — after [Handshake](#handshake) validation succeeds — into one of three routes before any further processing. This classification is the receiver's primary defense against unsolicited token consumption: only the **inbox** route is permitted to invoke the host agent's LLM.
+
+### Cost guarantee
+
+The host agent's LLM (or any equivalently expensive reasoning loop) MUST NOT be invoked by inbound traffic from a sender that is not a known contact with a `messaging` grant, except via the explicit user action of reviewing a quarantined item. Routing and quarantine decisions MUST be made by rules-only logic at the receiver (the Sidecar or its gateway).
+
+A receiver MUST NOT use the host agent to interpret, score, summarize, or reply to traffic on the quarantine path. Summaries presented to the user in the quarantine UI SHOULD be drawn from sender-supplied fields (e.g. `payload.text`, `hints.purpose`), not from receiver-side LLM processing of those fields.
+
+### Normative routing defaults
+
+| Sender classification | Default route | Configurable to |
+| --- | --- | --- |
+| VP invalid, no personhood/affiliation floor met | **drop** (401) | — |
+| Known contact, has `messaging` grant | **inbox** | — |
+| Known contact, no `messaging` grant | **403, log** | inbox (per-contact opt-in) |
+| Unknown sender, same affiliation as recipient | **inbox** (enterprise default) | quarantine (`compliance_mode: "always_quarantine"`) |
+| Unknown sender, different or no affiliation | **quarantine** | inbox (personal opt-in; not RECOMMENDED) |
+
+For personal Shadows (no recipient affiliation), the default for all unknown senders is **quarantine**. This is the safer default and matches the cost guarantee above.
+
+For enterprise Shadows (recipient holds an AffiliationCredential), unknown senders bearing a valid AffiliationCredential whose `credentialSubject.affiliation` matches the recipient's are routed to **inbox** by default. This is the internal-mail analog: messages from `@acme.com` to `@acme.com` skip quarantine. Operators MAY override per-policy.
+
+Cross-affiliation traffic (Acme to Google) is treated as unknown-sender unless the contact graph says otherwise.
+
+### Quarantine surface
+
+Quarantined items are held by the receiver (commonly the gateway, per [RFC-0005 §Gateway pattern](./0005-sns.md#gateway-pattern)) and surfaced to the Subject through:
+
+- The MCP tools [`social_quarantine_list`](./0007-mcp-tools.md#social_quarantine_list) and [`social_quarantine_review`](./0007-mcp-tools.md#social_quarantine_review).
+- Out-of-band notification (email, push) when the user has registered one. The notification itself MUST NOT contain message content beyond the sender Shadowname and a sender-supplied summary line; the user must open the quarantine surface to see the body.
+
+The receiver MUST hold quarantined items for at least 14 days before expiry; SHOULD hold longer (default 30 days). The receiver MAY apply rate limits and abuse filtering before quarantining — items above the abuse threshold MAY be **flagged** in the quarantine surface but MUST NOT be silently discarded. The user retains the final discard choice.
+
+### Sender behavior on quarantine
+
+When a sender's request is quarantined, the receiver SHOULD respond with `202 Accepted` and an [A2A task](#async-and-offline) in `submitted` state. The sender's Shadow learns the message is awaiting recipient review but receives no information about who/why. The receiver MUST NOT leak the quarantine decision through error codes or timing.
+
+When the recipient eventually approves or rejects, the receiver MAY transition the task to `working` (and deliver subsequent responses normally) or `failed` (with no detail beyond `peer_declined`). Senders MUST treat indefinite `submitted` state as "no response expected" and SHOULD give up after a documented timeout.
+
+### Invitation envelopes
+
+The first message from an unknown sender is typically an **invitation** — a request to be added to the recipient's contact graph. v0.1 does not define a typed Interaction Profile for invitations (Interaction Profiles are out of v0.1 scope); invitations are carried in the default free-form envelope with a recognized hint:
+
+```json
+{
+  "shadownet:v": "0.1",
+  "intentId": "urn:uuid:...",
+  "payload": {
+    "text": "Hi, I'm Alex. I'm a contractor working with Bob on Project Foo. I'd like to coordinate on Y and Z over the next two weeks.",
+    "hints": {
+      "purpose": "invitation",
+      "proposed_collaboration": "Project Foo",
+      "introducer_contact": "did:key:z6MkBobPubkey..."
+    }
+  }
+}
+```
+
+Recognized `hints.purpose` values at v0.1: `"invitation"`. Receivers MUST treat envelopes with `hints.purpose: "invitation"` from unknown senders as invitations — surfacing them through the quarantine path with the sender-supplied summary, not invoking the host agent's LLM to interpret the text. Receivers MUST NOT treat the presence of `introducer_contact` as a quarantine bypass — at v0.1, vouching from the contact graph is a UI hint only, never an authentication shortcut.
+
+Other purpose values MAY be defined in future RFCs (e.g. `"reintroduction"`, `"service-notice"`). Receivers MUST ignore unrecognized purpose values rather than failing.
+
 ## Async and offline
 
 A long-running negotiation uses A2A `task` semantics:
@@ -175,6 +239,7 @@ v0.1 error codes:
 | `payload_invalid` | 400 | `payload` failed validation against a known `interaction` profile the callee chose to enforce. |
 | `rate_limited` | 429 | Too many requests. |
 | `peer_offline` | 503 | Sidecar reachable but Subject's host agent is unreachable. |
+| `peer_declined` | 403 | Recipient reviewed a quarantined invitation and chose not to accept. No further detail. |
 
 ## Schema
 

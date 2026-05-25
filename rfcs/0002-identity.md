@@ -77,7 +77,7 @@ Lost-key recovery is out of scope for v0.1 — losing the private key means losi
 - `did:key` resolves locally (parse the multibase tail).
 - `did:web` resolves over HTTPS; results SHOULD be cached for the `Cache-Control` window, default 1 hour if absent.
 
-## Forbidden DID document fields (v0.1)
+## Permitted DID document fields (v0.1)
 
 To keep verifier complexity bounded, a v0.1 DID document MUST contain only:
 
@@ -85,8 +85,29 @@ To keep verifier complexity bounded, a v0.1 DID document MUST contain only:
 - `verificationMethod` (Ed25519 only)
 - `authentication`
 - `assertionMethod`
+- `shadownet:delegatedIssuers` — OPTIONAL, organizations only
 
 Any other field MUST be ignored by v0.1 verifiers.
+
+### `shadownet:delegatedIssuers` (organizations only)
+
+An organization MAY delegate the right to issue AffiliationCredentials on its behalf to one or more SCAs it controls. This is the case when, for example, `did:web:acme.example` delegates affiliation issuance to its dedicated SCA `did:web:sca.acme.example`, or when an org outsources HR identity to a managed provider.
+
+```json
+{
+  "id": "did:web:acme.example",
+  "verificationMethod": [ ... ],
+  "authentication": [ ... ],
+  "assertionMethod": [ ... ],
+  "shadownet:delegatedIssuers": [
+    "did:web:sca.acme.example"
+  ]
+}
+```
+
+Verifiers checking an AffiliationCredential whose `iss` differs from `credentialSubject.affiliation` MUST resolve the affiliation org's DID document and confirm that the issuing DID appears in `shadownet:delegatedIssuers`. If absent, the credential MUST be rejected. See [RFC-0003 §AffiliationCredential](./0003-credentials.md#affiliationcredential).
+
+Individual (`did:key`) DID documents MUST NOT contain `shadownet:delegatedIssuers`. Verifiers MUST ignore the field if present on an individual DID.
 
 ## Open questions
 

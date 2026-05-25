@@ -56,6 +56,32 @@ Out: stranger-matching (Hubs), interaction-content schemas (scheduling/intro/dat
 
 The protocol does not name any SNS or SCA as canonical. Verifiers maintain a **trust store** that lists which SCAs they accept and at which assurance levels. The reference cloud deployment at v0.1 ships as the only entry in the default trust store, but is structurally one provider of many. See [RFC-0004 §Trust store](./0004-sca.md#trust-store).
 
+## Trust models
+
+Shadownet distinguishes two trust models. Implementers MUST keep them separate; conflating them produces both false negatives (rejecting legitimate enterprise senders) and false positives (treating a personhood level as a trust score).
+
+- **Institutional trust** — anchored to a credential issuer. Verifiers accept claims because they trust the issuer: an SCA in the trust store (for personhood), or domain control via a `did:web` org DID (for affiliation). This is the model email uses for `@acme.com`: the recipient trusts the domain, not the individual. Personhood credentials ([RFC-0003 §Levels](./0003-credentials.md#levels)) and AffiliationCredentials ([RFC-0003 §AffiliationCredential](./0003-credentials.md#affiliationcredential)) are both institutional.
+- **Relational trust** — anchored to the local contact graph. A verifier trusts a peer because the Subject (or, in enterprise deployments, the org's IT policy) explicitly added them, with explicit per-contact grants and local-only profile notes. See [RFC-0007 §social_grant](./0007-mcp-tools.md#social_grant) and [RFC-0007 §Contact profile](./0007-mcp-tools.md#contact-profile).
+
+Personhood credentials are a Sybil-resistance **floor** for institutional trust — "is this a real human, not a bot farm?" — not a trust ranking. An L3 stranger is not more trustworthy than a contact with no credential at all. Once a contact is in a Subject's graph, decisions about what that contact may ask come from grants and profile, not from their level.
+
+### Enterprise deployments
+
+The enterprise pattern composes the existing protocol surfaces; it does not require new ones. The mapping to the email/DNS stack is direct:
+
+| Email / DNS | Shadownet |
+| --- | --- |
+| DNS resolution | SNS resolution ([RFC-0005](./0005-sns.md)) |
+| `local@domain` address | Shadowname `local@provider` |
+| MX record + provider mailbox | SNS endpoint, optionally fronted by a gateway ([RFC-0005 §Gateway pattern](./0005-sns.md#gateway-pattern)) |
+| DKIM signature on outbound | Verifiable Presentation ([RFC-0006 §Handshake](./0006-a2a-profile.md#handshake)) |
+| Domain identity (SPF / DMARC `From:` alignment) | `did:web` organization DID ([RFC-0002 §did:web — organizations](./0002-identity.md#did-web--organizations)) |
+| "From acme.com" implies Acme's vouching | AffiliationCredential issued by the org's `did:web` |
+| Internal vs external mail policy | Same-affiliation routing default vs unknown-sender quarantine ([RFC-0006 §Routing and quarantine](./0006-a2a-profile.md#routing-and-quarantine)) |
+| Spam filter on the provider, user keeps control | Provider MAY flag at the gateway; user MUST retain the choice to surface or discard |
+
+An enterprise running its own SCA SHOULD issue AffiliationCredentials, not L1/L2/L3 personhood — affiliation is what scales by domain control, and it leaves personhood to a small set of personhood-issuing SCAs whose roots are widely accepted.
+
 ## Conformance classes
 
 | Class | Defined by | Required of |

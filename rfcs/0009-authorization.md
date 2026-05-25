@@ -265,8 +265,8 @@ The v0.1 normative scope set:
 
 | Scope | Permits |
 | --- | --- |
-| `mcp:tools.read` | `tools/list`; the `social_contacts`, `social_contact_detail`, `social_identity`, `social_resolve`, `social_inbox` MCP tools. |
-| `mcp:tools.write` | The `social_send`, `social_respond`, `social_add_contact`, `social_grant`, `social_set_webhook` MCP tools, and any future state-mutating tools. |
+| `mcp:tools.read` | `tools/list`; the `social_contacts`, `social_contact_detail`, `social_identity`, `social_resolve`, `social_inbox`, `social_quarantine_list` MCP tools. |
+| `mcp:tools.write` | The `social_send`, `social_respond`, `social_add_contact`, `social_grant`, `social_set_webhook`, `social_set_contact_profile`, `social_quarantine_review` MCP tools, and any future state-mutating tools. |
 | `mcp:inbox.wait` | The long-poll `social_inbox_wait` MCP tool. |
 | `offline_access` | The AS MAY issue a refresh token. Standard OAuth 2.1 scope. |
 
