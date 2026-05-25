@@ -51,7 +51,7 @@ sequenceDiagram
         SS->>LS: A2A message send + Bearer + Presentation
         LS->>SCA: status list (cached, may skip)
         LS-->>SS: 200 taskId
-        LS->>LS: notify Hermes via webhook
+        LS->>LS: notify Hermes (inbox-wait)
         Note over LS: Hermes runs LLM with local context
         LS->>SS: A2A message send (response, role-reversed)
     and
@@ -353,7 +353,7 @@ In order, fail-fast:
 4. **Required-level expression for this interaction.** Lukas's policy for `urn:shadownet:int:scheduling.v0-draft` from a known contact: `>= L1`. Sarah is `L2`. ✓
 5. **Local grant check.** Sarah's contact ID has the `messaging` grant. ✓
 6. **Persist** the inbound message to SQLite with `intentId`, `direction:inbound`, `status:received`.
-7. **Notify** Hermes via webhook.
+7. **Notify** Hermes via `social_inbox_wait` (the long-poll returns the event).
 
 ### 5e. Lukas's Sidecar response
 
@@ -371,32 +371,28 @@ Content-Type: application/json
 }
 ```
 
-### 5f. Webhook to Hermes (Sidecar → host agent, local)
+### 5f. Notification to Hermes (Sidecar → host agent, local)
 
-Lukas's Sidecar pushes the inbox event to Hermes via the webhook Hermes registered earlier with `social_set_webhook` (RFC-0007 §Inbound notifications):
+Lukas's Sidecar delivers the inbox event to Hermes via `social_inbox_wait` (RFC-0007 §Inbound notifications). Hermes's background long-poll returns:
 
-```http
-POST /webhooks/a2a-inbox HTTP/1.1
-Host: hermes.localhost:8644
-Content-Type: application/json
-X-Shadownet-Sidecar-Sig: sha256=<hex HMAC-SHA256 of body, key=registered secret>
-X-Shadownet-Sidecar-Ts:  1759200200
-X-Shadownet-Sidecar-Id:  sc-lukas-01
-
+```json
 {
-  "shadownet:v": "0.1",
-  "event":       "inbox.message",
-  "occurredAt":  1759200200,
-  "data": {
-    "intentId":    "urn:uuid:int-001",
-    "contactId":   "ctc_sarah01",
-    "interaction": "urn:shadownet:int:scheduling.v0-draft",
-    "messageId":   "msg-7c3f"
-  }
+  "events": [{
+    "event_id":   "evt-7c3f",
+    "event":      "inbox.message",
+    "occurredAt": 1759200200,
+    "data": {
+      "intentId":    "urn:uuid:int-001",
+      "contactId":   "ctc_sarah01",
+      "interaction": "urn:shadownet:int:scheduling.v0-draft",
+      "messageId":   "msg-7c3f"
+    }
+  }],
+  "next_event_id": "evt-7c3f"
 }
 ```
 
-Hermes verifies the HMAC, checks the timestamp is within ±5 min of local time, then calls `social_inbox` to read the actual payload (the webhook deliberately does not carry it).
+Hermes then calls `social_inbox` to read the actual payload.
 
 ## Step 6 — Hermes thinks (local)
 
@@ -461,7 +457,7 @@ Sofia responds: free, proposes Tiergarten.
 
 ## Step 9 — Sarah's host agent reconciles
 
-Sarah's Sidecar, on receiving each response, persists it and notifies Claude Desktop via webhook. Claude Desktop calls `social_inbox`, sees three responses, runs its LLM:
+Sarah's Sidecar, on receiving each response, persists it and delivers the event to Claude Desktop (via whichever inbound path Claude Desktop uses — long-poll or MCP notification). Claude Desktop calls `social_inbox`, sees three responses, runs its LLM:
 
 > Tiergarten ✓ (Sofia proposed; everyone OK with it)
 > Sun afternoon ✓ (intersection of all availabilities: 14:00–17:00 fits)
