@@ -160,6 +160,24 @@ Three calls, three `intentId`s. The Sidecar takes it from here.
 
 ## Step 3 — Sarah's Sidecar resolves names (SNS)
 
+Before verifying any record, Sarah's Sidecar needs each SNS provider's signing DID. It fetches `/.well-known/sns/v1/provider.json` once per provider (cached per `Cache-Control`). Cold-cache fetch for `sh4dow.org`:
+
+```http
+GET /.well-known/sns/v1/provider.json HTTP/1.1
+Host: sh4dow.org
+Accept: application/json
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: max-age=3600
+
+{ "shadownet:v": "0.1", "providerDid": "did:web:sh4dow.org" }
+```
+
+The same document at `sofiacomputing.example` returns `"providerDid": "did:web:sofiacomputing.example"`; not reproduced. With `providerDid` known per provider, Sarah's Sidecar can now verify records.
+
 For each peer, the Sidecar checks its contact entry. If `snsRecordExp` is in the past, it re-resolves.
 
 For this run, assume Anna's record is still fresh (cache hit, no network). Lukas's is stale; Sofia's is stale.
@@ -200,7 +218,7 @@ Decoded:
 }
 ```
 
-Sarah's Sidecar verifies the signature against `did:web:sh4dow.org`'s key (resolved from `https://sh4dow.org/.well-known/did.json`, cached). Updates the contact entry.
+Sarah's Sidecar checks `iss == providerDid` (`did:web:sh4dow.org`, from the discovery doc in step 3), then verifies the signature against that DID's key (resolved from `https://sh4dow.org/.well-known/did.json`, cached). Updates the contact entry.
 
 ### 3b. Sofia — different SNS provider
 
