@@ -97,7 +97,7 @@ output: { items: [{ id, contactId, intentId, interaction, payload, receivedAt }]
 
 ### `social_inbox_wait`
 
-Long-polls for inbox events. Holds the call open until events arrive or the timeout elapses. Suitable for host agents that cannot host an inbound HTTPS webhook (laptops, MCP-only runtimes) and for hosts whose MCP SDK does not dispatch the [`notifications/shadownet/*`](#path-1-mcp-server-initiated-notification-in-band) namespace.
+Long-polls for inbox events. Holds the call open until events arrive or the timeout elapses. Suitable for host agents whose MCP SDK does not dispatch the [`notifications/shadownet/*`](#path-1-mcp-server-initiated-notification-in-band) namespace, and the RECOMMENDED default inbound delivery mechanism for all deployments.
 
 ```
 input:  {
@@ -112,7 +112,7 @@ output: {
 
 `event` and `data` shapes MUST match the corresponding entry in [§ Events](#events). `event_id` is **opaque** to clients — host agents MUST NOT parse it, compare it ordinally, or otherwise interpret its contents. The only normative operation is to pass the most recently received value back as `last_event_id` on the next call.
 
-Cross-transport dedupe: the same event delivered via the webhook path ([§ Path 2](#path-2-webhook-out-of-band)) and `social_inbox_wait` MUST carry byte-identical `event_id` strings. Host agents receiving the same event on both transports dedupe by string equality on `event_id`.
+Cross-transport dedupe: the same event delivered via the MCP notification path ([§ Path 1](#path-1-mcp-server-initiated-notification-in-band)) and `social_inbox_wait` MUST carry byte-identical `event_id` strings. Host agents receiving the same event on both transports dedupe by string equality on `event_id`.
 
 #### Server behavior
 
@@ -128,10 +128,6 @@ Cross-transport dedupe: the same event delivered via the webhook path ([§ Path 
 - The host agent MUST re-invoke immediately after each successful return (no inter-call sleep on success). The server-side timeout clamp provides the natural pacing.
 - On transport error: exponential backoff RECOMMENDED, starting ~1 s, capped ~30 s, with up to 25% jitter.
 
-#### Coexistence with webhooks
-
-A tenant MAY have both a webhook subscriber and an active `social_inbox_wait` consumer. The Sidecar delivers each event to both channels; receivers dedupe by `event_id`. Most host agents will choose one path — plugins SHOULD make the two mutually exclusive in their default configuration to avoid double processing.
-
 ### `social_respond`
 
 Responds within an existing intent.
@@ -140,6 +136,54 @@ Responds within an existing intent.
 input:  { intentId: string, payload: object }
 output: { taskId }
 ```
+
+### `social_coordinate`
+
+Initiates a coordination flow (meetup, meeting, etc.) with a contact. The peer's Shadow negotiates a plan autonomously — the Subject is not interrupted until both agents reach agreement.
+
+```
+input:  {
+  contactId: string,
+  activity:  string,            ; e.g. "coffee", "dinner", "meeting"
+  details?:  string             ; constraints — e.g. "Thursday morning", "downtown"
+}
+output: { intentId, taskId, message: string }
+```
+
+The Sidecar MUST create a `coordination_request` payload conforming to RFC-0006 and dispatch it via A2A. The peer's response arrives asynchronously as an `inbox.message` event with `data_type: "response"`.
+
+After calling this, the host agent SHOULD end its turn and await the inbound event — it MUST NOT poll `social_inbox` in a loop.
+
+### `social_confirm_plan`
+
+Confirms an agreed coordination plan and sends a `confirmation` message to the peer. Called after the Subject approves a proposed plan (the response from a `social_coordinate` flow).
+
+```
+input:  { contactId?: string }            ; if omitted, confirms the most recent pending plan
+output: { confirmed: boolean, plan: object, message: string }
+```
+
+The Sidecar MUST:
+1. Locate the most recent inbound `response` with status `received` for the given contact (or any contact if omitted).
+2. Mark it as `responded`.
+3. Build a `confirmation` payload containing the agreed plan.
+4. Dispatch it to the peer via A2A.
+
+### `social_accept_plan`
+
+Accepts a coordination plan that was proposed by a peer (an inbound `confirmation` message). Called after the Subject says "yes" to an invitation.
+
+```
+input:  { intentId?: string }             ; if omitted, accepts the most recent pending confirmation
+output: { accepted: boolean, message: string }
+```
+
+The Sidecar MUST:
+1. Locate the pending inbound `confirmation` (by `intentId` or most recent).
+2. Mark it as `responded`.
+3. Build a `confirmed` payload and dispatch it to the peer via A2A.
+
+After this tool returns, the coordination is complete on both sides.
 
 ### `social_grant`
 
@@ -155,7 +199,7 @@ v0.1 defines two grant strings:
 | Grant | Permits |
 | --- | --- |
 | `messaging` | The contact may send messages at all. Required for any inbound from this contact to reach `social_inbox`. |
-| `coordinate` | The contact may initiate negotiations that require structured coordination (calendar, payments, group flows once defined). Implies `messaging`. |
+| `coordinate` | The contact may initiate the coordination flow ([`social_coordinate`](#social_coordinate) → response → [`social_confirm_plan`](#social_confirm_plan) / [`social_accept_plan`](#social_accept_plan)) and any future structured-negotiation flows. Implies `messaging`. |
 
 Future RFCs MAY add scoped grants. Verbs that resemble "this contact's introduction of strangers is sufficient" (web-of-trust vouching) are deliberately not defined at v0.1: a leaked grant of that shape becomes a phishing vector, and the gain over surfacing "this contact introduced them" as a UI hint in the quarantine surface is small.
 
@@ -167,21 +211,6 @@ Returns the Sidecar's own identity.
 input:  {}
 output: { did, shadowname, publicKey, credentials[] }
 ```
-
-### `social_set_webhook`
-
-Registers (or updates) the host-agent webhook to which the Sidecar pushes inbound activity. See [Inbound notifications](#inbound-notifications) for the wire contract.
-
-```
-input:  {
-  url:     string,                 ; HTTPS or http://localhost only
-  secret:  string,                 ; ≥32 bytes, host-agent-chosen, used for HMAC
-  events?: string[]                ; default: all events
-}
-output: { ok: true }
-```
-
-To unregister, call with `url: ""`. The Sidecar persists the registration and replays it after restart.
 
 ### `social_quarantine_list`
 
@@ -280,25 +309,23 @@ A `profile` of `{}` clears all fields. Partial updates are not defined at v0.1; 
 - The Sidecar MUST log every tool call to local storage (subject to user-controlled retention).
 - The Sidecar MUST NOT silently expand the Subject's exposed data beyond what each tool's input names.
 - **Cost guarantee.** Inbound from a sender that is not a known contact with the `messaging` grant MUST NOT appear in `social_inbox`, MUST NOT trigger any `notifications/shadownet/*` MCP notification beyond optional out-of-band quarantine alerts, and MUST NOT cause the host agent's reasoning loop to be invoked. Such inbound is surfaced exclusively through `social_quarantine_list` until the Subject explicitly reviews it. This is the local enforcement of the [RFC-0006 §Cost guarantee](./0006-a2a-profile.md#cost-guarantee).
-- **Contact profile is local-only.** A `ContactProfile` MUST NOT appear in any over-the-wire artifact (A2A envelope, VP, SNS record, integration bundle, OAuth token, webhook payload). Implementations that synchronize state across multiple Sidecars for the same Subject MAY include profile data in that synchronization channel provided it remains under the Subject's exclusive control.
+- **Contact profile is local-only.** A `ContactProfile` MUST NOT appear in any over-the-wire artifact (A2A envelope, VP, SNS record, integration bundle, OAuth token). Implementations that synchronize state across multiple Sidecars for the same Subject MAY include profile data in that synchronization channel provided it remains under the Subject's exclusive control.
 
 ## Inbound notifications
 
-Three delivery paths are defined. A Sidecar MUST support at least one:
+Two delivery paths are defined. A Sidecar MUST support at least one:
 
 1. **MCP notifications** — server-initiated push on the existing MCP channel (Path 1, below).
-2. **Webhook** — out-of-band HTTPS push to a host-agent-controlled URL (Path 2).
-3. **Long-poll** — host-agent-driven via [`social_inbox_wait`](#social_inbox_wait) (Path 3).
+2. **Long-poll** — host-agent-driven via [`social_inbox_wait`](#social_inbox_wait) (Path 2).
 
-Host agents that subscribe to none of the above MUST fall back to one-shot polling of [`social_inbox`](#social_inbox).
+Host agents that subscribe to neither MUST fall back to one-shot polling of [`social_inbox`](#social_inbox).
 
-All three paths are first-class and permanent. Pick based on deployment:
+Path 2 (`social_inbox_wait`) is RECOMMENDED as the default inbound delivery mechanism. Pick based on deployment:
 
 - Path 1 fits when the host agent's MCP stack dispatches arbitrary notification namespaces and the MCP transport keeps a push channel open reliably. Lowest infrastructure cost when it works.
-- Path 2 fits cloud-to-cloud deployments where the host agent runs a reachable HTTPS endpoint. Familiar webhook ergonomics, replay defense, and retry semantics.
-- Path 3 fits hosts that cannot keep a server-push channel open (laptops behind NAT, idle-killing middleboxes), MCP clients that only support request/response, and deployments that want the pull model for auditing, rate-control, or batching.
+- Path 2 fits hosts that cannot keep a server-push channel open (laptops behind NAT, idle-killing middleboxes), MCP clients that only support request/response, and deployments that want the pull model for auditing, rate-control, or batching.
 
-A Sidecar MAY implement more than one. Receivers consuming multiple paths dedupe by `event_id` (see [§ `social_inbox_wait`](#social_inbox_wait) and the Path 2 wire shape).
+A Sidecar MAY implement both. Receivers consuming both paths dedupe by `event_id` (see [§ `social_inbox_wait`](#social_inbox_wait)).
 
 ### Path 1: MCP server-initiated notification (in-band)
 
@@ -310,69 +337,15 @@ Sidecars that implement [MCP server-initiated notifications](https://modelcontex
 - `notifications/shadownet/presentation.failed`
 - `notifications/shadownet/quarantine.pending`
 
-Notification params mirror the corresponding webhook `data` shape (below) plus an `event_id` field that MUST be byte-identical to the `event_id` the same event would carry via [`social_inbox_wait`](#social_inbox_wait) or the webhook path. This is how host agents that consume more than one transport dedupe.
+Notification params mirror the corresponding `data` shape in [§ Events](#events) plus an `event_id` field that MUST be byte-identical to the `event_id` the same event would carry via [`social_inbox_wait`](#social_inbox_wait). This is how host agents that consume both transports dedupe.
 
-Sidecars emitting these notifications SHOULD advertise the `mcp-notifications` capability in their [integration bundle](./0008-onboarding.md#capability-flags). Host agents are responsible for confirming their MCP SDK dispatches these notification methods; SDKs that validate against a closed notification union will silently drop them, in which case the host agent SHOULD use Path 3 instead.
+Sidecars emitting these notifications SHOULD advertise the `mcp-notifications` capability in their [integration bundle](./0008-onboarding.md#capability-flags). Host agents are responsible for confirming their MCP SDK dispatches these notification methods; SDKs that validate against a closed notification union will silently drop them, in which case the host agent SHOULD use Path 2 instead.
 
-### Path 2: Webhook (out-of-band)
+### Path 2: Long-poll via `social_inbox_wait`
 
-For host agents that prefer (or only support) HTTP webhooks. Registered via [`social_set_webhook`](#social_set_webhook).
+See [§ `social_inbox_wait`](#social_inbox_wait) above for the full tool contract. This is the RECOMMENDED default for all deployments.
 
-#### Wire shape
-
-```http
-POST <registered url> HTTP/1.1
-Content-Type: application/json
-X-Shadownet-Sidecar-Sig: sha256=<hex HMAC-SHA256 of body, key=secret>
-X-Shadownet-Sidecar-Ts:  1759200200
-X-Shadownet-Sidecar-Id:  <opaque Sidecar instance id>
-
-{
-  "shadownet:v": "0.1",
-  "event_id":    "01HQZX...",
-  "event":       "inbox.message",
-  "occurredAt":  1759200200,
-  "data": {
-    "intentId":    "urn:uuid:int-001",
-    "contactId":   "ctc_sarah01",
-    "interaction": "urn:shadownet:int:scheduling.v0-draft",
-    "messageId":   "msg-..."
-  }
-}
-```
-
-`event_id` is opaque to receivers and MUST be byte-identical to the `event_id` the same event would carry via [`social_inbox_wait`](#social_inbox_wait) or a Path 1 notification. Receivers dedupe across transports by string equality on this field.
-
-The webhook payload deliberately does NOT carry the message *content* — the host agent is expected to call `social_inbox` for the actual payload. This keeps the webhook small, replay-safe, and avoids leaking content into webhook logs.
-
-#### Receiver requirements
-
-The host agent MUST:
-
-1. Verify the HMAC. Compare `X-Shadownet-Sidecar-Sig` (after stripping the `sha256=` prefix) against `HMAC-SHA256(secret, body)`.
-2. Reject deliveries whose `X-Shadownet-Sidecar-Ts` differs from local time by more than 5 minutes (replay defense).
-3. Respond `2xx` on accepted delivery; any other status (including `5xx`) triggers retry.
-4. Be idempotent on `event_id` (a delivery may arrive more than once due to retries, and the same event MAY also arrive via another path).
-
-#### Retries
-
-If delivery fails (timeout > 10 s, non-2xx, connection error), the Sidecar SHOULD retry with exponential backoff:
-
-| Attempt | Delay from previous |
-| --- | --- |
-| 1 | immediate |
-| 2 | +5 s |
-| 3 | +30 s |
-| 4 | +5 min |
-| 5 | +30 min |
-
-After attempt 5, the Sidecar SHOULD mark the webhook as **degraded** and continue serving the host agent via polling. Delivery resumes when `social_set_webhook` is called again or the host agent successfully calls any tool (treated as a liveness signal).
-
-#### URL constraints
-
-`url` MUST be `https://…` OR `http://localhost…` / `http://127.0.0.1…` / `http://[::1]…`. All other `http://` schemes MUST be rejected (`invalid_webhook_url`). This prevents accidental plaintext deliveries off-host.
-
-#### Events
+### Events
 
 | `event` | `data` shape | When |
 | --- | --- | --- |
@@ -384,18 +357,7 @@ After attempt 5, the Sidecar SHOULD mark the webhook as **degraded** and continu
 
 Future events are added by name; v0.1 host agents MUST ignore unrecognised event types rather than failing.
 
-#### Compatibility headers
-
-Sidecars MAY emit additional compatibility headers that carry the same HMAC-SHA256 in alternate formats demanded by other webhook ecosystems. When such headers are emitted:
-
-- The canonical `X-Shadownet-Sidecar-Sig`, `-Ts`, and `-Id` headers MUST still be emitted.
-- Receivers validating only a compatibility header MUST also verify `X-Shadownet-Sidecar-Ts` is within ±5 minutes of local time, OR explicitly accept the loss of replay defense (e.g., behind a documented config flag).
-- Sender configuration enabling compatibility headers SHOULD log a one-line warning at startup naming the safety property being bypassed.
-
-A widely-supported example is `X-Webhook-Signature: <hex HMAC-SHA256 of body, key=secret>` — raw hex, no prefix — used by [Hermes Agent webhooks](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/webhooks) and similar generic-HMAC adapters. The spec endorses no specific compatibility header; the pattern is what's normative.
-
 ## Open questions
 
 - Whether to define a tool for adjusting the trust store (`social_trust_add`, `social_trust_remove`) or leave that to a separate config/UI surface.
 - Whether `social_send` should accept multi-recipient input directly (group fan-out at the Sidecar) or require the host agent to call N times.
-- Whether webhook secrets should be rotatable without re-registration.

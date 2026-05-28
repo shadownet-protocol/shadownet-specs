@@ -9,7 +9,6 @@
     "did",
     "shadowname",
     "mcp_endpoint",
-    "webhook_secret",
     "supported_features",
     "tool_names",
     "event_names",
@@ -37,10 +36,6 @@
       "format": "uri",
       "pattern": "^https://",
       "description": "RFC 9728 Protected Resource Metadata URL for this tenant's MCP endpoint. MUST be present iff `oauth-authorize` is in `supported_features` (RFC-0009)."
-    },
-    "webhook_secret": {
-      "type": ["string", "null"],
-      "description": "Pre-provisioned HMAC secret, or null if no subscriber is registered."
     },
     "supported_features": {
       "type": "array",

@@ -10,7 +10,7 @@ Everything outside the envelope is identical:
 
 - DID resolution via SNS, signed records — see Birthday flow §1–2.
 - Verifiable Presentation handshake on first contact, session JWT thereafter — Birthday flow §3–5.
-- A2A transport (`message:send`, `task:get`) and webhook delivery to the host agent — Birthday flow §6–8.
+- A2A transport (`message:send`, `task:get`) and inbound delivery to the host agent — Birthday flow §6–8.
 - SCA freshness, revocation, required-level predicates — Birthday flow §4 and RFC-0004.
 
 The only thing this walkthrough changes is the **shape of the envelope `payload`**.
@@ -77,7 +77,7 @@ Per [RFC-0006 §Verifier obligations](../rfcs/0006-a2a-profile.md#verifier-oblig
 2. Parses the envelope; sees `interaction` is absent.
 3. MUST accept and MUST surface the `payload` to Hermes as-is. No schema validation runs.
 4. Persists the inbound message to SQLite with `intentId`, `direction:inbound`, `interaction:null`.
-5. Notifies Hermes via the webhook (RFC-0007 §webhook contract).
+5. Notifies Hermes via `social_inbox_wait` (RFC-0007 §Inbound notifications).
 
 Hermes pulls the message from `social_inbox`, feeds `payload.text` and any `hints` into its LLM along with Lukas's local context (calendar, preferences), and decides what to say.
 
