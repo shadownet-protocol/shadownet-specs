@@ -16,7 +16,7 @@ This is a *local* onboarding surface — between the Subject's chosen host agent
 
 ## Motivation
 
-Before this RFC, each host agent integration required users to copy-paste two or three separate values (token, base URL, optionally a webhook secret) from the Sidecar's account portal into the host agent's config file or environment. Every plugin reinvented the prompts. New host agents required prose-only install paragraphs in multiple READMEs that drifted as values changed.
+Before this RFC, each host agent integration required users to copy-paste two separate values (token, base URL) from the Sidecar's account portal into the host agent's config file or environment. Every plugin reinvented the prompts. New host agents required prose-only install paragraphs in multiple READMEs that drifted as values changed.
 
 The goal is one paste: the user copies a `shadownet://connect?...` URL once, and any compliant host agent can derive the rest.
 
@@ -50,9 +50,8 @@ The `did` field follows the DID-method rules in [RFC-0002](./0002-identity.md): 
   "did": "did:key:z6MkSubjectPubkey...",
   "shadowname": "alice@app.sh4dow.org",
   "mcp_endpoint": "https://app.sh4dow.org/u/alice/mcp",
-  "webhook_secret": "wh_eyJhbGciOi...",
-  "supported_features": ["mcp", "webhook", "inbox-wait", "bundle", "connect-url"],
-  "tool_names": ["social_send", "social_inbox", "social_inbox_wait", "social_set_webhook", "..."],
+  "supported_features": ["mcp", "inbox-wait", "bundle", "connect-url"],
+  "tool_names": ["social_send", "social_inbox", "social_inbox_wait", "..."],
   "event_names": ["inbox.message", "task.update", "freshness.expired", "presentation.failed"],
   "version": "0.3.0"
 }
@@ -66,9 +65,8 @@ The `did` field follows the DID-method rules in [RFC-0002](./0002-identity.md): 
   "did": "did:web:acme.sh4dow.org",
   "shadowname": "events@acme.sh4dow.org",
   "mcp_endpoint": "https://acme.sh4dow.org/u/events/mcp",
-  "webhook_secret": null,
-  "supported_features": ["mcp", "webhook", "bundle", "connect-url"],
-  "tool_names": ["social_send", "social_inbox", "social_set_webhook", "..."],
+  "supported_features": ["mcp", "inbox-wait", "bundle", "connect-url"],
+  "tool_names": ["social_send", "social_inbox", "social_inbox_wait", "..."],
   "event_names": ["inbox.message", "task.update", "freshness.expired", "presentation.failed"],
   "version": "0.3.0"
 }
@@ -82,10 +80,9 @@ The `did` field follows the DID-method rules in [RFC-0002](./0002-identity.md): 
 | `did` | string | yes | Tenant DID; `did:key` for individuals, `did:web` for organizations (RFC-0002). |
 | `shadowname` | string | yes | `local@provider` form per [RFC-0005](./0005-sns.md). |
 | `mcp_endpoint` | string (https URL) | yes | The MCP streamable-HTTP endpoint per RFC-0007. |
-| `webhook_secret` | string \| null | yes | Pre-provisioned HMAC secret for webhook deliveries; `null` if no webhook subscriber is registered. The host agent MAY use this when calling `social_set_webhook`, or generate its own. |
 | `supported_features` | string array | yes | Capability flags — clients gate behavior on these. See [Capability flags](#capability-flags) below. |
 | `tool_names` | string array | yes | The MCP tools this Sidecar exposes. Lets host agents pre-validate skill compatibility before connecting. |
-| `event_names` | string array | yes | The event names this Sidecar may emit (via webhook, `social_inbox_wait`, or MCP notifications). |
+| `event_names` | string array | yes | The event names this Sidecar may emit (via `social_inbox_wait` or MCP notifications). |
 | `version` | string | yes | Sidecar implementation version (free-form; semver RECOMMENDED). Not the protocol version. |
 
 #### Capability flags
@@ -95,10 +92,9 @@ The normative set at v0.1, extensible:
 | Flag | Meaning |
 | --- | --- |
 | `mcp` | The MCP endpoint at `mcp_endpoint` is live (RFC-0007). Required for any RFC-0007-compliant Sidecar. |
-| `webhook` | Webhook delivery is supported (`social_set_webhook` works). |
 | `bundle` | This endpoint is implemented (echoed for reflection). REQUIRED on RFC-0008-compliant Sidecars. |
 | `connect-url` | Sidecar accepts `shadownet://connect` URLs (§ Connect URL scheme). |
-| `inbox-wait` | The `social_inbox_wait` MCP tool is implemented ([RFC-0007 § social_inbox_wait](./0007-mcp-tools.md#social_inbox_wait)). |
+| `inbox-wait` | The `social_inbox_wait` MCP tool is implemented ([RFC-0007 § social_inbox_wait](./0007-mcp-tools.md#social_inbox_wait)). RECOMMENDED for all Sidecars. |
 | `mcp-notifications` | Sidecar emits the `notifications/shadownet/*` namespace on the MCP channel ([RFC-0007 § Path 1](./0007-mcp-tools.md#path-1-mcp-server-initiated-notification-in-band)). |
 | `oauth-authorize` | Sidecar implements the OAuth 2.1 authorization profile in [RFC-0009](./0009-authorization.md). When set, the bundle MUST also include the `protected_resource_metadata` field naming the RFC 9728 PRM URL for this tenant. |
 
@@ -166,7 +162,7 @@ The field name `client_nonce` is reserved on the handoff request body. v0.1 clie
 #### Constraints
 
 - Exactly one of `token` / `handoff` MUST be present. Both → reject. Neither → reject.
-- `base` MUST use `https://` in production. `http://` is valid only for hosts in the loopback set (`localhost`, `127.0.0.1`, `::1`), matching the webhook URL allowlist in [RFC-0007 § URL constraints](./0007-mcp-tools.md#url-constraints).
+- `base` MUST use `https://` in production. `http://` is valid only for hosts in the loopback set (`localhost`, `127.0.0.1`, `::1`).
 - Multiple `base`, `token`, or `handoff` parameters → reject (no merging).
 
 ### Per-host install pages

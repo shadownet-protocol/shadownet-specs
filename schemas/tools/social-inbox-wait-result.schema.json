@@ -23,7 +23,7 @@
       "properties": {
         "event_id": {
           "type": "string",
-          "description": "Opaque per-tenant identifier. Byte-identical to the event_id the same event carries via webhook or notifications/shadownet/* transports."
+          "description": "Opaque per-tenant identifier. Byte-identical to the event_id the same event carries via notifications/shadownet/* transports."
         },
         "event": {
           "type": "string",
@@ -32,11 +32,11 @@
         "occurredAt": {
           "type": "integer",
           "minimum": 0,
-          "description": "Unix seconds, mirrors the webhook payload field."
+          "description": "Unix seconds."
         },
         "data": {
           "type": "object",
-          "description": "Payload identical to the webhook event of the same name. See RFC-0007 § Events."
+          "description": "Payload for this event type. See RFC-0007 § Events."
         }
       },
       "additionalProperties": false
