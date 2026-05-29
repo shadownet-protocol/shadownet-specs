@@ -12,11 +12,9 @@ created: 2026-05-29
 
 ## 1. Introduction
 
-Shadownet is an A2A Extension that adds cryptographic per-message identity, a federated name service, and identity attestations to the A2A protocol. It is the layer that lets two personal AI agents acting on behalf of two humans address each other by a human-readable name and prove they represent the entity they claim — without inventing a new agent-to-agent transport.
+Shadownet is an A2A Extension that adds cryptographic per-message identity, a federated name service, and identity attestations to the A2A protocol. It is the layer that lets two personal AI agents address each other by a human-readable name and prove they represent the entity they claim — without inventing a new agent-to-agent transport.
 
-Shadownet is to A2A what DKIM and DMARC are to SMTP. A Shadowname (`alice@example.com`) resolves via DNS to a provider; the provider issues a signed A2A AgentCard binding the name to a signing key; every A2A message between Shadows carries a Shadownet envelope in its extension metadata, signed by the sender's key; identity is established by affiliation credentials issued by organizations a recipient already trusts.
-
-**Sybil resistance is structural, not central.** Shadownet does not define a "personhood" credential and does not designate a central authority to attest that a Shadowname represents a unique human. Cheap personhood ceremonies (email verification) don't deliver real uniqueness; strong ceremonies (biometric, in-person) bring adoption-killing liability. There is no honest middle. The protocol relocates Sybil defense to **organizations and Hubs** that can vet contextually (a dating hub checks photos; a hiring hub checks work history; a club issues membership). The single credential kind in v0.2 is `org_affiliation`.
+A Shadowname (`alice@example.com`) resolves via DNS to a provider; the provider issues a signed A2A AgentCard binding the name to a signing key; every A2A message between Shadows carries a Shadownet envelope in its extension metadata, signed by the sender's key; identity is established by affiliation credentials issued by organizations a recipient already trusts.
 
 This document is normative. It assumes a working knowledge of A2A v1.0; references to A2A sections are to the canonical A2A specification at <https://a2a-protocol.org/>.
 
@@ -32,13 +30,13 @@ Times are integer seconds since the Unix epoch unless an enclosing format (such 
 
 Domain names follow RFC 1035; internationalized domains follow RFC 5891 (IDNA2008). Shadownames are case-insensitive on the local part; canonical form is lowercase.
 
-**Naming conventions.** Shadownet uses different conventions by category, applied consistently:
+**Naming conventions** (applied throughout):
 
 | Category | Convention | Examples |
 | --- | --- | --- |
 | JSON field names (keys) | camelCase | `msgHash`, `fromContact`, `messageId` |
-| JSON value strings (kinds, error codes, grant names) | snake_case | `org_affiliation`, `creds_rejected` |
-| URN suffixes and URL path segments | snake_case (matching value strings) | `urn:shadownet:error:creds_rejected` |
+| JSON value strings (kinds, error codes) | snake_case | `org_affiliation`, `creds_rejected` |
+| URN suffixes and URL path segments | snake_case | `urn:shadownet:error:creds_rejected` |
 | HTTP headers | Mixed-Case-With-Dashes | `A2A-Extensions`, `A2A-Version` |
 | DNS TXT keys | lowercase | `v=`, `ep=`, `pk=` |
 | JWT standard claims | 3-char abbreviations | `iss`, `sub`, `iat`, `exp`, `aud`, `jti`, `kid` |
@@ -46,27 +44,27 @@ Domain names follow RFC 1035; internationalized domains follow RFC 5891 (IDNA200
 | JWS `typ` header values | kebab + `+jwt` (RFC 8417) | `shadownet-env+jwt`, `shadownet-cred+jwt`, `shadownet-csr+jwt` |
 | Algorithm names | standard | `EdDSA`, `SHA-256`, `TLS 1.3` |
 
-**Protocol version.** This document defines Shadownet **v0.2**, succeeding the v0.1 RFC set in this repository. v0.2 is intentionally pre-stable; breaking changes between minor versions are expected until 1.0. The wire and URN identifiers carry `0.2` literally:
+**Protocol version.** This document defines Shadownet **v0.2**. The wire and URN identifiers carry `0.2` literally:
 
 ```
 urn:shadownet:0.2
 ```
 
-A2A allows URI identifiers for extensions; URN is a URI. The identifier does not need to resolve. Non-normative documentation MAY be hosted elsewhere and referenced by spec text. Authors MAY migrate to a `w3id.org`-hosted HTTPS URL in a future revision if specification hosting at the URI becomes desirable; the URN identifier is stable in the meantime. Future revisions bump the version: `urn:shadownet:0.3`, `urn:shadownet:1.0`, etc.
+A2A allows URI identifiers for extensions; URN is a URI. The identifier does not need to resolve. Future revisions bump the version: `urn:shadownet:0.3`, `urn:shadownet:1.0`, etc.
 
 ## 3. Identifiers
 
-Shadownet uses three identifier forms. All are bare strings; no DID method machinery is involved.
+Shadownet uses three identifier forms. All are bare strings.
 
 | Form | Example | Used for |
 | --- | --- | --- |
 | **Shadowname** | `alice@sh4dow.org` | The addressable agent. Always `local@provider`. |
 | **Domain** | `acme.example` | Organizations, Hubs, and issuer endpoints. |
-| **Public key** | `z6MkAlicePub...` | Multibase-encoded Ed25519 public key (base58btc, multicodec 0xed01). Self-describing via the `z6Mk` prefix. |
+| **Public key** | `z6MkAlicePub...` | Multibase-encoded Ed25519 public key (base58btc, multicodec 0xed01). |
 
 A Shadow is identified by its Shadowname and signs with a public key bound to that Shadowname by the provider (§5). Organizations and Hubs are identified by their domain and sign with a public key published in DNS (§4.2). Credentials reference Shadownames and domains directly.
 
-There is one kind of Shadow. The protocol does not type Shadows as "person" or "organization" — whatever is behind a Shadow (a verified human, an organization persona, an automated service, an AI customer-support endpoint) is conveyed by which credentials it presents and which Hubs/orgs have admitted it, not by the shape of its identifier.
+The protocol does not type Shadows. What a Shadow represents (a human, an organization persona, an automated service) is conveyed by the credentials it presents, not by the shape of its identifier.
 
 ## 4. Cryptography and name service
 
@@ -110,7 +108,7 @@ TXT values MAY exceed 255 characters via RFC 1035 string chaining; resolvers con
 
 ### 4.3 DNSSEC
 
-DNSSEC validation is RECOMMENDED. v0.2 does not mandate DNSSEC because resolvers cannot turn it on unilaterally; without DNSSEC the risk profile equals MX-based mail. Deployments operating affiliation-issuing domains for high-stakes Hubs SHOULD require DNSSEC on their own zone.
+DNSSEC validation is RECOMMENDED. Deployments operating affiliation-issuing domains for high-stakes Hubs SHOULD require DNSSEC on their own zone.
 
 ## 5. Names
 
@@ -135,8 +133,6 @@ Response: a signed A2A AgentCard per A2A §8.4 with the Shadownet extension fiel
 
 The AgentCardSignature is by the provider key (`pk` from §4.2). The JWS header's `kid` MUST be `shadownet@<provider-domain>` (e.g., `shadownet@sh4dow.org`); verifiers MUST reject other `kid` values.
 
-**Discovery path divergence from A2A.** Shadownet uses the per-Shadow path `<ep>/identity/<local>` rather than A2A's root-level `/.well-known/agent-card.json` (RFC 8615). The well-known URI is a single-card-per-domain construct, which cannot serve per-Shadow cards in a multi-tenant provider. Shadownet's identity-endpoint lookup is the "direct configuration" pattern from A2A §8.2 — clients are configured by the DNS+identity-endpoint discovery chain (§5.4) to find each per-Shadow card.
-
 ### 5.3 Shadownet extension fields on the AgentCard
 
 | Field | Required | Meaning |
@@ -157,7 +153,7 @@ The card's `capabilities.extensions` MUST include the Shadownet URI marked `requ
 }
 ```
 
-The card's `supportedInterfaces[0].url` is the URL to which senders POST A2A `message:send` requests for this Shadow. Shadownet uses A2A's **URL-based multi-tenancy** (`multi-tenancy.md` §1) — each Shadow's URL is distinct in the AgentCard. The A2A `tenant` field is not used by this extension; receivers MUST ignore it if present.
+The card's `supportedInterfaces[0].url` is the URL to which senders POST A2A `message:send` requests for this Shadow. Shadownet uses A2A's URL-based multi-tenancy (A2A `multi-tenancy.md` §1); the A2A `tenant` field is not used by this extension and receivers MUST ignore it if present.
 
 ### 5.4 Resolution flow
 
@@ -173,27 +169,25 @@ The card's `supportedInterfaces[0].url` is the URL to which senders POST A2A `me
   extract shadownet:pk, supportedInterfaces[0].url
 ```
 
-Resolution failure (NXDOMAIN, 4xx/5xx, malformed, signature mismatch) is hard fail. Resolvers MUST surface failure distinctly from other errors so callers distinguish "unreachable" from "rejected" from "missing."
+Resolution failure (NXDOMAIN, 4xx/5xx, malformed, signature mismatch) is hard fail. Resolvers MUST surface failure distinctly from rejection and from a missing recipient.
 
 ### 5.5 Caching
 
 - DNS TXT: cached per DNS TTL.
 - AgentCard: cached per the HTTP response's `Cache-Control: max-age`. RECOMMENDED `max-age=3600`. Default 3600 s if header absent.
-- Providers SHOULD include an `ETag` header on AgentCard responses (typically derived from a content hash of the canonical JSON, or the card's `version` field). Resolvers SHOULD use `If-None-Match` for conditional refresh; a `304 Not Modified` extends the cached card's lifetime without redownload, per A2A §8.6.
+- Providers SHOULD include an `ETag` header on AgentCard responses. Resolvers SHOULD use `If-None-Match` for conditional refresh per A2A §8.6.
 
-On cache expiry, resolvers refresh. If a refresh returns a different `shadownet:pk` (the Shadow rotated), envelopes signed by the old key MAY have arrived in flight; receivers SHOULD accept signatures verifiable against the previously-cached key for one additional `max-age` window after detecting rotation. This bounds split-key acceptance to two cache windows in the worst case.
+On cache expiry, resolvers refresh. If a refresh returns a different `shadownet:pk` (the Shadow rotated), receivers SHOULD accept signatures verifiable against the previously-cached key for one additional `max-age` window after detecting rotation.
 
 ### 5.6 Key rotation
 
-A Shadow rotates by re-registering with its provider, which issues a new signed AgentCard containing the new `shadownet:pk`. There is no in-band rotation statement.
-
-Rotation latency equals the AgentCard cache TTL plus the grace window in §5.5. Credentials about the Shadowname are unaffected by key rotation (they were never bound to the key) and remain valid through rotation.
+A Shadow rotates by re-registering with its provider, which issues a new signed AgentCard containing the new `shadownet:pk`. There is no in-band rotation statement. Rotation latency equals the AgentCard cache TTL plus the §5.5 grace window. Credentials about the Shadowname are unaffected by key rotation and remain valid through rotation.
 
 A provider rotates its own signing key by re-publishing DNS TXT with a new `pk` value. The provider MAY publish multiple `pk=` keys during a transition; verifiers MUST accept signatures from any of them.
 
 ## 6. Credentials
 
-A credential is a JWS-compact JWT signed by an organization (or its delegated issuer), asserting that a Shadowname is affiliated with that organization. v0.2 defines one kind of credential.
+A credential is a JWS-compact JWT signed by an organization (or its delegated issuer), asserting that a Shadowname is affiliated with that organization.
 
 ### 6.1 Wire shape
 
@@ -235,23 +229,18 @@ Validation:
 2. Verify the JWS signature.
 3. Check `exp > now - 60`, `iat < now + 60`.
 4. Check `typ == "shadownet-cred+jwt"`.
-5. Check `kind == "org_affiliation"` (v0.2). Reject unknown kinds.
+5. Check `kind == "org_affiliation"`. Reject unknown kinds.
 6. Check `iss` is authorized to issue for `org` per §6.6.
 7. Check revocation per §6.4.
 8. Check trust store (§7).
 
 ### 6.2 Kinds
 
-v0.2 defines **one credential kind**:
+v0.2 defines one credential kind:
 
 | Kind | Asserts |
 | --- | --- |
-| `org_affiliation` | The Shadowname (`sub`) is a member of, or otherwise acts for, the organization (`org`). The strength of this attestation derives from how the issuer vets membership — a dating Hub verifying photos, an employer verifying employment, a club verifying paid membership. |
-
-**No personhood, no global org-verification.** Earlier drafts and the v0.1 RFC set defined a `personhood` kind ("this Shadowname is a unique verified human") and an `org` kind ("this domain is a verified business"). Both are removed in v0.2:
-
-- **Personhood** failed honestly. Cheap personhood ceremonies (email verification) do not deliver uniqueness — aged accounts are commodity inputs. Strong personhood ceremonies (biometric, in-person) bring Worldcoin-grade adoption resistance, liability, and operational burden. There is no honest middle. Sybil defense belongs at the Hub layer, where vetting can be contextual to the use case (§7.4). A future revision MAY re-add `personhood` if a real high-stakes need emerges; `kind` is an extensible string.
-- **Global org-verification** is redundant with the trust store. If a verifier trusts `acme.example` to issue `org_affiliation`, they have already decided Acme is a real organization. An `org` credential from a third-party registrar duplicates that decision. The trust store does the work.
+| `org_affiliation` | The Shadowname (`sub`) is a member of, or otherwise acts for, the organization (`org`). The strength of this attestation derives from how the issuer vets membership. |
 
 Future revisions MAY add kinds by string. Verifiers MUST treat unknown kind strings as "not present" against the trust store.
 
@@ -261,7 +250,7 @@ Future revisions MAY add kinds by string. Verifiers MUST treat unknown kind stri
 | --- | --- |
 | `org_affiliation` | 30 days |
 
-Affiliation is short-lived because affiliations change (people leave employers, abandon Hubs, lose memberships). Tighter lifetimes give tighter revocation; shorter `exp` is the only knob.
+Shorter `exp` is the only knob for tighter revocation latency.
 
 ### 6.4 Revocation
 
@@ -271,15 +260,15 @@ Issuers publish a per-epoch status list:
 https://<iss-domain>/.well-known/shadownet/status/<epoch>
 ```
 
-Body: gzip-compressed bitstring, base64url-encoded as a single ASCII string. `Content-Type: text/plain`. Honest `Cache-Control: max-age=<seconds>` (RECOMMENDED 300).
+Body: gzip-compressed bitstring, base64url-encoded as a single ASCII string. `Content-Type: text/plain`. `Cache-Control: max-age=<seconds>` (RECOMMENDED 300).
 
 Bit `idx` set to `1` means revoked. Verifiers fetch, cache, inspect the bit at `rev.idx`.
 
-On fetch failure or malformed list, verifiers MUST fail closed: revocation is the only kill switch.
+On fetch failure or malformed list, verifiers MUST fail closed.
 
 Issuers SHOULD roll the epoch when a list grows unwieldy. Old epochs MUST remain served until every credential they cover has expired.
 
-There is no separate freshness-proof artifact. Revocation latency is bounded by `Cache-Control max-age`.
+Revocation latency is bounded by `Cache-Control max-age`.
 
 ### 6.5 Issuance
 
@@ -310,28 +299,26 @@ CSR payload, signed by the Subject's signing key:
 }
 ```
 
-The CSR's `iss` is the Shadowname requesting attestation. The `aud` is the issuer being asked. `req.org` disambiguates which organization the affiliation is being requested for (a delegated issuer may serve multiple orgs).
+The CSR's `iss` is the Shadowname requesting attestation. The `aud` is the issuer being asked. `req.org` disambiguates which organization the affiliation is being requested for.
 
 Issuer responses:
 
-- `200 OK` (`Content-Type: application/jose`) with the credential JWS as body, when the ceremony is complete.
+- `200 OK` (`Content-Type: application/jose`) with the credential JWS as body.
 - `409 ceremony_pending` with JSON body `{ "next": "https://verify.example.com/..." }` directing the Subject to complete the ceremony out-of-band.
 - `403 ceremony_failed` if the ceremony was rejected.
 - `429 rate_limited` per issuer policy.
 
-The Subject re-POSTs the same CSR after ceremony completion. **Issuers SHOULD treat repeated CSRs from the same Subject with identical `iss` / `aud` / `req` claims (within the lifetime of one ceremony) as idempotent** — returning the same response without re-running ceremony state. This makes client retry safe under transient network failures or split-brain polling.
+The Subject re-POSTs the same CSR after ceremony completion. Issuers SHOULD treat repeated CSRs from the same Subject with identical `iss` / `aud` / `req` claims as idempotent within the lifetime of one ceremony.
 
 Subjects MUST control their private key throughout; issuers MUST NOT request it.
-
-**OIDC-backed issuers (non-normative).** A common pattern: an issuer wraps an OIDC flow (Sign in with Google, Sign in with Apple, Workspace SSO, GitHub OAuth) and issues `org_affiliation` based on the verified OIDC token. For Google Workspace specifically, OIDC is the strongest available proof of organizational affiliation — Google has already verified the domain controls the account. The CSR-in/cred-out shape above accommodates this without spec changes; the issuer's internal ceremony API is its own concern. OIDC is also useful as a low-friction onboarding ceremony for casual-stakes Hubs.
 
 ### 6.6 Affiliation issuer rules
 
 An `org_affiliation` credential's `iss` MUST be one of:
 
 1. `iss == org`. The org issues directly with its own DNS-published key.
-2. `iss` is a sub-domain of `org`'s domain (e.g., `hr.acme.example` issuing for `org = acme.example`). The sub-domain is presumed under the org's control.
-3. `iss` is listed in `_shadownet.<org-domain>` TXT under `delegate=` keys; multiple `delegate=` entries permitted, any match accepts. This covers outsourced identity providers (managed HR, OIDC bridges, Hub-administration services).
+2. `iss` is a sub-domain of `org`'s domain (e.g., `hr.acme.example` issuing for `org = acme.example`).
+3. `iss` is listed in `_shadownet.<org-domain>` TXT under `delegate=` keys; multiple `delegate=` entries permitted, any match accepts.
 
 Verifiers MUST reject `org_affiliation` credentials whose issuer satisfies none of these.
 
@@ -344,14 +331,13 @@ A flat list of `(issuer-domain, [accepted-kinds])` tuples:
 ```json
 [
   { "issuer": "acme.example",            "accept": ["org_affiliation"] },
-  { "issuer": "tiergarten-club.example", "accept": ["org_affiliation"] },
-  { "issuer": "berlin-hiring.example",   "accept": ["org_affiliation"] }
+  { "issuer": "tiergarten-club.example", "accept": ["org_affiliation"] }
 ]
 ```
 
 A credential is **trusted** iff some entry has `issuer == c.iss ∧ c.kind ∈ entry.accept`. The verifier also checks that `c.iss` is authorized to attest for `c.org` per §6.6.
 
-The reference Sidecar ships with an **empty trust store**. Users populate it as they join Hubs, take jobs, accept club memberships, or otherwise establish relationships with organizations they want incoming credentials to reference. There is no default issuer; there is no trust-on-first-use.
+The reference Sidecar ships with an empty trust store. There is no default issuer; there is no trust-on-first-use.
 
 ### 7.2 Acceptance policy
 
@@ -363,9 +349,7 @@ The reference Sidecar ships with an **empty trust store**. Users populate it as 
 ```
 
 - `fromContact`: kinds required from a sender already in the contact graph. Empty (default) = no credential check beyond contact membership.
-- `fromStranger`: kinds required from a sender not in the contact graph. Empty = strangers rejected outright. The reference default `["org_affiliation"]` accepts strangers who present any trusted affiliation; tighten by emptying or by leaving the trust store narrow.
-
-That is the entire policy surface: two lists, no compound expressions, no predicate language.
+- `fromStranger`: kinds required from a sender not in the contact graph. Empty = strangers rejected outright.
 
 ### 7.3 Evaluation
 
@@ -380,16 +364,6 @@ A credential set `C` satisfies the verifier with trust store `T` and required ki
   ∧ not revoked(c)
   ∧ c.kind ∈ K
 ```
-
-### 7.4 Hubs and Sybil defense
-
-Hubs are organizations that exist to introduce strangers under a contextual vetting model. A dating Hub admits members after photo verification; a hiring Hub admits after work-history checks; a regional meetup Hub admits after a paid subscription or local-presence check. Hub membership is expressed as an `org_affiliation` credential issued by the Hub.
-
-This is the only Sybil-resistance mechanism the protocol provides. It works because Hubs vet contextually — the dating Hub knows what "real human looking for a date" looks like; a global personhood CA never could. A bot farm trying to spam a dating Hub must defeat that Hub's specific vetting per identity, which has marginal cost determined by the Hub's ceremony quality.
-
-A Hub's own acceptance policy is the same as any other Shadow's: `fromStranger: ["org_affiliation"]` with its own domain in the trust store. Bots cannot reach Hub members without first passing the Hub's own ceremony, whatever it is. Different Hubs serve different bars.
-
-Cross-Hub introductions, Hub-to-Hub federation, and Hub-driven coordination flows are application-level concerns built on top of the wire and out of scope for v0.2.
 
 ## 8. The envelope — Shadownet A2A Extension
 
@@ -432,9 +406,9 @@ The envelope is carried as a JWS-compact string in the message's metadata under 
 
 The `extensions` array MUST list `urn:shadownet:0.2` to satisfy A2A §4.6.
 
-The A2A `parts` array MUST include at least one TextPart mirroring `body.text` from the envelope; this gives non-Shadownet observers a coherent rendering. Shadownet receivers read body content from the envelope, not from parts, and use parts only for the `msgHash` integrity check (§8.4).
+The A2A `parts` array MUST include at least one TextPart mirroring `body.text` from the envelope. Shadownet receivers read body content from the envelope, not from parts, and use parts only for the `msgHash` integrity check (§8.4).
 
-Threading: when an envelope continues a prior conversation, reuse the prior `contextId` per A2A §3.4. There is no separate `intentId` in v0.2; A2A's `contextId` is the correlation primitive.
+Threading: when an envelope continues a prior conversation, reuse the prior `contextId` per A2A §3.4.
 
 ### 8.3 Envelope JWS
 
@@ -509,13 +483,13 @@ Three slots, all optional except `text`:
 
 | Slot | Type | Meaning |
 | --- | --- | --- |
-| `text` | string | Human-readable message text. RECOMMENDED on every envelope so fallback display always makes sense. |
-| `intent` | URI string | Application-defined attestation of what kind of interaction this is. Receivers MAY validate `data` against a known intent's schema; MUST NOT reject envelopes with unrecognized intents. |
+| `text` | string | Human-readable message text. RECOMMENDED on every envelope. |
+| `intent` | URI string | Application-defined identifier for the kind of interaction. Receivers MAY validate `data` against a known intent's schema; MUST NOT reject envelopes with unrecognized intents. |
 | `data` | object | Application-defined structured payload, schema named by `intent` when present. |
 
-The protocol assigns no normative intent URIs. Intent profiles (`urn:shadownet:intent:scheduling_v1`, `urn:shadownet:intent:intro_v1`, etc.) are defined in companion specs and evolve at their own cadence. The transport stays stable.
+Intent profiles are defined in companion specs. The transport stays stable.
 
-Receivers MUST surface envelopes with unknown `intent` values, treating `data` as opaque. Receivers MAY apply intent-specific validation only when they have opted into a known intent profile.
+Receivers MUST surface envelopes with unknown `intent` values, treating `data` as opaque.
 
 ### 8.6 Validation
 
@@ -536,7 +510,7 @@ Any step's failure halts validation and returns the corresponding error.
 
 ### 8.7 Response
 
-Shadownet receivers MUST return a `Message` response (not a `Task`) to `message:send`. The response Message carries `role: ROLE_AGENT` and a minimal acceptance text part. The HTTP response SHOULD include `A2A-Extensions: urn:shadownet:0.2` confirming extension activation (per A2A §4.6.2 extension echo).
+Shadownet receivers MUST return a `Message` response (not a `Task`) to `message:send`. The response Message carries `role: ROLE_AGENT` and a minimal acceptance text part. The HTTP response SHOULD include `A2A-Extensions: urn:shadownet:0.2` per A2A §4.6.2 extension echo.
 
 ```http
 HTTP/1.1 200 OK
@@ -555,9 +529,7 @@ A2A-Extensions: urn:shadownet:0.2
 }
 ```
 
-Returning a `Message` rather than a `Task` keeps Shadownet to A2A's "message-only agent" pattern (A2A `life-of-a-task.md`): the response confirms receipt; the receiver does not commit to a task state machine the sender can observe. Whether and how the receiver later replies — same `contextId`, new `messageId`, fresh envelope, opposite direction — is the receiver's choice and is conveyed as fresh inbound traffic to the sender, not as task state updates on the original message.
-
-Receivers that need A2A `Task` semantics for application-level long-running work MAY open a fresh Task on their own initiative after acceptance. That task is its own A2A interaction, not implicitly tied to the inbound envelope.
+The response confirms receipt and exposes no further receiver state. Subsequent activity (a reply, a follow-up) is conveyed as fresh inbound traffic, not as task updates on the original message.
 
 ### 8.8 Errors
 
@@ -582,12 +554,12 @@ Defined error codes (each appears as `urn:shadownet:error:<code>` in the `type` 
 | `signature` | 401 | Envelope signature does not validate. |
 | `creds_required` | 401 | No cached credentials for `from`; sender SHOULD retry with `creds`. |
 | `creds_rejected` | 403 | Credentials present but none satisfy receiver policy. |
-| `policy` | 403 | Receiver policy rejects this sender for undisclosed reasons. |
+| `policy` | 403 | Receiver policy rejects this sender. |
 | `replay` | 409 | `(from, messageId)` already seen. |
 | `unknown_recipient` | 404 | `to` is not served by this URL. |
 | `rate_limited` | 429 | Rate limit hit. |
 
-Error responses are deliberately coarse. Receivers MUST NOT leak whether the envelope was placed in stranger_review, whether the user has reviewed it, or any other receiver-side state.
+Receivers MUST NOT leak receiver-side classification state through error variations.
 
 ### 8.9 Replay defense
 
@@ -597,13 +569,11 @@ There is no per-message nonce. Replay is bounded by `exp` and the cache.
 
 ### 8.10 Offline, retry, and reachability
 
-If a recipient's `supportedInterfaces[0].url` is unreachable (connection refused, DNS NXDOMAIN, timeout), the sender's Sidecar SHOULD retry with exponential backoff: initial delay 30 s, doubling, jittered ±25%, capped at a total retry budget of 24 hours. After the budget the sender SHOULD surface the failure to its host agent and stop.
+If a recipient's `supportedInterfaces[0].url` is unreachable, the sender's Sidecar SHOULD retry with exponential backoff: initial delay 30 s, doubling, jittered ±25%, capped at a total retry budget of 24 hours. After the budget the sender SHOULD surface the failure and stop.
 
-**Retries re-sign.** The envelope's 5-minute expiry window (§8.3 `exp - iat ≤ 300`) does not extend through retries. Each retry attempt MUST re-mint the envelope with fresh `iat`, `exp`, and `messageId`, signed again with the Subject's key. A sender that re-sends the same envelope bytes will be rejected once `exp` passes (or earlier as a `(from, messageId)` cache entry materializes after a successful first delivery). Senders cache the intended `body`, `to`, and `contextId` between attempts; the signing identity and message identity are re-minted on each attempt.
+**Retries re-sign.** The envelope's 5-minute expiry window (§8.3) does not extend through retries. Each retry attempt MUST re-mint the envelope with fresh `iat`, `exp`, and `messageId`, signed again with the Subject's key. Senders cache the intended `body`, `to`, and `contextId` between attempts; the signing identity and message identity are re-minted on each attempt.
 
-**Always-on endpoints; intermittent hosts use the gateway pattern.** v0.2 requires recipient endpoints to be publicly reachable during the sender's retry budget. There is no relay, no MX-style secondary, no store-and-forward at the wire layer. Intermittent hosts — laptops, mobile devices, NAT-trapped home servers — MUST operate behind a gateway: the AgentCard's `supportedInterfaces[0].url` points at an always-on gateway that accepts envelopes, holds them, and delivers to the backend Sidecar via whatever internal mechanism the operator chooses (long-poll, push, SSE, queue subscription). Gateway internals — queue retention policy, backend pull protocol, gateway-to-backend authentication, abuse handling — are out of scope; reference implementations document specific approaches.
-
-A future revision MAY define a normative provider-level store-and-forward (MX-style) to remove the always-on requirement. That work is a v0.3 candidate, not v0.2.
+**Always-on endpoints.** v0.2 requires recipient endpoints to be publicly reachable during the sender's retry budget. There is no relay, no store-and-forward at the wire layer. Intermittent hosts MUST operate behind a gateway: the AgentCard's `supportedInterfaces[0].url` points at an always-on gateway that accepts envelopes and delivers to the backend Sidecar via whatever internal mechanism the operator chooses. Gateway-to-backend authentication is out of scope.
 
 ## 9. Receiver classification
 
@@ -618,15 +588,13 @@ else:
     return error creds_rejected
 ```
 
-Three routes: **inbox** (deliver normally), **stranger_review** (hold for the Subject's review), **rejected** (return the error).
+Three routes: **inbox** (deliver), **stranger_review** (hold for the Subject's review), **rejected** (return the error).
 
-The protocol specifies the rule. It does not specify what the receiver does with each route. Receivers MAY auto-process stranger_review or hold it for review; receivers MAY rate-limit, batch, or drop stranger_review items after a retention window. None of these choices change the wire.
+**Auto-add on outbound-initiated conversations.** Receivers SHOULD auto-add a sender to the contact graph when the inbound envelope's `contextId` matches a recent outbound envelope from this Subject to that Shadowname. Receivers MUST verify the inbound's `contextId` actually corresponds to outbound from the Subject to that specific Shadowname, not merely to any outbound. Sidecars MAY cap the auto-add lookback window (RECOMMENDED 7 days).
 
-**Auto-add on outbound-initiated conversations.** Receivers SHOULD auto-add a sender to the contact graph when the inbound envelope's `contextId` matches a recent outbound envelope from this Subject to that Shadowname. The `contextId` binding distinguishes a genuine reply from an unsolicited inbound that happens to claim a contextId — the receiver can verify that it actually issued that contextId to that recipient. Without this rule, multi-party coordination flows (one Subject initiates, several reply) require every participant to manually approve every other after their own Sidecar reached out, which kills the canonical use case. With this rule, replies to a Subject's own outbound land in `inbox` directly.
+This rule MUST NOT trigger on inbound envelopes whose `contextId` does not correspond to a known outbound; that path remains stranger_review.
 
-This rule SHOULD NOT trigger on inbound envelopes whose `contextId` does not correspond to a known outbound from the Subject — that path remains stranger_review.
-
-**Same-provider-domain shortcut.** When both Shadownames share the same provider domain AND that domain operates as a single-tenant organization deployment (provider == org; e.g., both `alice@acme.example` and `bob@acme.example` where acme.example is the company's Sidecar provider), receivers MAY treat the sender as contact-equivalent and route to `inbox` without requiring an explicit `org_affiliation` credential — the shared provider IS the affiliation evidence. This shortcut is **NOT valid** for multi-tenant public providers (e.g., `sh4dow.org` hosting unrelated individuals); operators MUST configure whether their deployment is single-tenant-org or multi-tenant-public, and only enable the shortcut in the former case.
+**Same-provider-domain shortcut.** When both Shadownames share the same provider domain AND that domain operates as a single-tenant organization deployment (provider == org), receivers MAY treat the sender as contact-equivalent and route to `inbox` without requiring an explicit `org_affiliation` credential. This shortcut is **NOT valid** for multi-tenant public providers. Operators MUST configure whether their deployment is single-tenant-org or multi-tenant-public, and only enable the shortcut in the former case.
 
 ## 10. Versioning
 
@@ -638,7 +606,7 @@ The protocol version appears in three places:
 | Envelope payload | `"v": "0.2"` |
 | AgentCard extension declaration | URI `urn:shadownet:0.2` |
 
-A v0.3 protocol bumps to `v=0.3` and `urn:shadownet:0.3`. A v0.2 receiver MUST reject `v=0.3` envelopes and MUST ignore v0.3 extension declarations. v0.x is pre-stable: breaking changes between minor versions are expected. There are no per-claim version fields, no compatibility shims.
+A v0.3 protocol bumps to `v=0.3` and `urn:shadownet:0.3`. A v0.2 receiver MUST reject `v=0.3` envelopes and MUST ignore v0.3 extension declarations. There are no per-claim version fields, no compatibility shims.
 
 Providers transitioning between versions MAY serve both side by side; AgentCards MAY declare both extensions; clients select per their own version.
 
@@ -646,60 +614,52 @@ A2A's own versioning (`A2A-Version` header per A2A §3.6) is orthogonal: a Shado
 
 ## 11. Security considerations
 
-**Agent opacity.** A2A's foundational design principle — agents are opaque, exposing capabilities but not internal state — extends to Shadownet receivers. Receivers MUST NOT signal in response variations whether an envelope was routed to inbox versus stranger_review, whether a stranger_review item has been user-reviewed, whether rate-limit budget is near exhaustion, or any other internal classification state. The coarse error vocabulary in §8.8 inherits this principle. Senders learn the disposition of their envelope only through subsequent fresh inbound from the receiver — a reply, a follow-up, or silence.
+**Agent opacity.** Receivers MUST NOT signal in response variations whether an envelope was routed to inbox versus stranger_review, whether a stranger_review item has been user-reviewed, whether rate-limit budget is near exhaustion, or any other internal classification state. The error vocabulary in §8.8 inherits this principle.
 
-**Identity custody — three tiers.** Shadownet permits three distinct custody arrangements with different trust models. Operators MUST disclose which tier they offer:
+**Identity custody.** Three custody arrangements are permitted. Operators MUST disclose which tier they offer:
 
-1. **Self-hosted.** The Subject runs their own Sidecar AND operates their own provider domain. The Subject controls DNS, the AgentCard signing key, and the Shadow's signing key. Full self-sovereignty; the only person who can sign as the Subject is the Subject. Operationally the heaviest (own domain, own TLS, own DNS hosting); trust-cheapest.
+1. **Self-hosted.** Subject runs their own Sidecar and operates their own provider domain. Subject controls DNS, the AgentCard signing key, and the Shadow's signing key.
+2. **Hybrid (BYO-key).** Provider hosts the AgentCard and signs it, binding the Shadowname to a key the Subject generated and holds. Subject runs their own Sidecar. The provider can equivocate at AgentCard issuance but cannot sign envelopes as the Subject.
+3. **Fully managed.** Provider hosts the AgentCard, holds the Subject's private key, and runs the Sidecar. The provider can sign envelopes as the Subject.
 
-2. **Hybrid (BYO-key).** The provider hosts the AgentCard (and signs it, binding the Shadowname to a key the Subject generated and holds). The Subject runs their own Sidecar; the Subject's private key never leaves the Subject. The provider can equivocate at AgentCard issuance — serve a different `shadownet:pk` to different resolvers — but **cannot sign envelopes as the Subject**, because that requires the private key. Right for users who want a human-readable `name@hosted-provider` without surrendering signing authority. Operationally medium; trust-medium.
+**DNS as the trust anchor.** The provider's authority for a domain is established by DNS. An attacker who controls DNS for a domain can substitute the provider's `pk` and impersonate any Shadow under that domain. DNSSEC mitigates this for validating resolvers.
 
-3. **Fully managed.** The provider hosts the AgentCard, holds the Subject's private key, and runs the Sidecar. The provider can do anything the Subject could, including signing envelopes as them. Operationally the lightest; trust-heaviest. Equivalent to the cloud-hosted mail threat model.
+**Provider equivocation.** A provider can serve different AgentCards to different resolvers. v0.2 does not solve this. High-stakes verifiers SHOULD compare cached cards across independent observers.
 
-Providers operating tier 2 SHOULD publish a written sunset policy (export format, deletion-on-request, notice period before any wind-down) — a key the operator does not hold cannot be leaked at wind-down, and that property is the tier's main user-facing value.
+**TLS.** Every HTTPS link is TLS 1.3 in production. No STARTTLS-style negotiation.
 
-**DNS as the trust anchor.** The provider's authority for a domain is established by DNS. An attacker who controls DNS for `example.com` can substitute the provider's `pk` and impersonate any Shadow under that domain. DNSSEC mitigates this for validating resolvers. Without DNSSEC the risk profile equals MX-based mail.
+**Replay defense.** Envelopes are bounded by `exp ≤ iat + 300` and the receiver-side `(from, messageId)` cache. Each retry re-mints the envelope per §8.10. Credentials are reusable for their lifetime; revocation is the kill switch.
 
-**Provider equivocation.** A provider can serve different AgentCards to different resolvers. v0.2 does not solve this. A future revision MAY define a transparency log over signed AgentCards. High-stakes verifiers SHOULD compare cached cards across independent observers.
-
-**TLS.** Every HTTPS link is TLS 1.3 in production. No STARTTLS-style negotiation. Transports that cannot do TLS 1.3 are not Shadownet transports.
-
-**Sybil defense is contextual, not central.** A Sybil attacker must obtain N credentials at the kind the receiver requires. v0.2's only kind is `org_affiliation`, and each affiliation is gated by the organization's own vetting. A dating Hub can require photo verification per identity; a hiring Hub can require work history; an employer requires actually employing someone. The cost-per-Sybil is whatever the relevant Hub's ceremony imposes, and the protocol does not attempt to pick a single global standard. Receivers narrow their trust store and `fromStranger` policy to the Hubs whose vetting they accept. The protocol does not need a behavioral cost guarantee — the cost is in the ceremony, not in receiver compute policy.
-
-**Replay defense.** Envelopes are bounded by `exp ≤ iat + 300` and the receiver-side `(from, messageId)` cache. Each retry attempt re-mints the envelope per §8.10; senders never re-send identical bytes. Credentials are reusable for their lifetime; revocation is the kill switch.
-
-**Trust store bootstrap.** Adding an issuer extends the attack surface to that issuer's ceremonies. Users SHOULD periodically review and prune. Default trust store ships empty; there are no protocol-mandated default issuers.
+**Trust store bootstrap.** Adding an issuer extends the attack surface to that issuer's ceremonies. Users SHOULD periodically review and prune. Default trust store ships empty.
 
 **Cross-artifact confusion.** JWS `typ` headers distinguish credential (`shadownet-cred+jwt`), envelope (`shadownet-env+jwt`), and CSR (`shadownet-csr+jwt`). Receivers MUST check `typ` matches the expected artifact.
 
-**A2A required-extension enforcement.** Receivers' AgentCards declare the Shadownet extension `required: true`. Per A2A §3.3.4, this causes A2A to return `ExtensionSupportRequiredError` to senders that do not declare extension support; combined with `creds_rejected` on a Shadownet-aware sender presenting bad credentials, there is no path to invoke application logic without a valid envelope.
+**A2A required-extension enforcement.** Receivers' AgentCards declare the Shadownet extension `required: true`. Per A2A §3.3.4, A2A returns `ExtensionSupportRequiredError` to senders that do not declare extension support; combined with `creds_rejected` on a Shadownet-aware sender presenting bad credentials, no path invokes application logic without a valid envelope.
 
 **Multi-tenant routing.** Receivers serving multiple Shadows derive the recipient from the URL path. Mismatch between URL and envelope `to` returns `unknown_recipient`, distinct from `policy` and `creds_rejected`.
 
-**Auto-add abuse considerations.** The §9 auto-add-on-outbound-initiated rule binds against `contextId` that the receiver previously generated for outbound; an attacker cannot forge such a `contextId` without observing the original outbound. Receivers MUST verify the inbound's `contextId` actually corresponds to outbound from the Subject to that specific Shadowname, not merely to any outbound. Sidecars MAY cap the auto-add lookback window (RECOMMENDED 7 days) to limit the surface.
+**Auto-add abuse.** The §9 auto-add-on-outbound-initiated rule binds against `contextId` that the receiver previously generated. Receivers MUST verify the inbound's `contextId` actually corresponds to outbound from the Subject to that specific Shadowname.
 
-**Intent surface.** Receivers that opt into validating known `body.intent` profiles MUST treat unknown intents as opaque (deliver, not reject). A receiver that rejects on unknown intents enables a sender-side reconnaissance vector for the receiver's intent registry.
+**Intent surface.** Receivers that opt into validating known `body.intent` profiles MUST treat unknown intents as opaque. A receiver that rejects on unknown intents enables a reconnaissance vector for the receiver's intent registry.
 
 ## Appendix A — Channel topology
 
-The five channels Shadownet implementations operate on:
+The channels Shadownet implementations operate on:
 
-| Pair | Protocol | Who initiates | Notes |
+| Pair | Protocol | Initiator | Notes |
 | --- | --- | --- | --- |
 | Human ↔ Host LLM | UI-native | Either | Out of scope. |
-| Host LLM ↔ Sidecar | MCP (companion spec) | Host calls tools; Sidecar pushes events | Sidecar implementation chooses MCP server-push or host-side long-poll. Not a wire concern. |
+| Host LLM ↔ Sidecar | MCP (companion spec) | Host calls tools; Sidecar pushes events | Sidecar choice of MCP server-push or host-side long-poll. |
 | Sidecar ↔ DNS | DNS UDP/TCP | Sidecar | Cached per TTL. |
 | Sidecar ↔ Provider HTTPS | HTTPS GET | Sidecar | AgentCard fetch. Cached per `Cache-Control`. Split-key acceptance during rotation per §5.5. |
 | Sidecar ↔ Issuer HTTPS | HTTPS GET (status) / POST (CSR) | Sidecar | Status list cached per `Cache-Control`. CSR is idempotent within a ceremony per §6.5. |
-| Sidecar ↔ Sidecar | A2A `message:send` | Either side, per envelope | Logical full-duplex via two POSTs: each direction is its own HTTP exchange. No persistent connection unless A2A streaming is opted into. |
+| Sidecar ↔ Sidecar | A2A `message:send` | Either side, per envelope | Each direction is its own HTTP exchange. |
 
-Both Sidecars in any conversation MUST be reachable on an HTTPS endpoint resolvable from the public Internet (directly, behind a tunnel, or via a gateway). Async delivery is sender-side retry (§8.10); v0.2 has no relay.
+Both Sidecars in any conversation MUST be reachable on an HTTPS endpoint resolvable from the public Internet (directly, behind a tunnel, or via a gateway). Async delivery is sender-side retry (§8.10).
 
-## Appendix B — Example transaction (Hub-mediated stranger contact)
+## Appendix B — Example transaction
 
-Alice (`alice@sh4dow.org`) and Bob (`bob@example.org`) are members of `tiergarten-club.example`, a Berlin tech meetup Hub. The Hub admits members after a paid subscription and an in-person verification at one of its events; on admission it issues each member an `org_affiliation` credential. Alice and Bob do not know each other and are not in each other's contact graphs.
-
-Both have `tiergarten-club.example` in their trust store at `org_affiliation` and `fromStranger: ["org_affiliation"]`. Alice sends a first-contact scheduling proposal to Bob through the Hub-context.
+Alice (`alice@sh4dow.org`) and Bob (`bob@example.org`) both hold `org_affiliation` credentials issued by `tiergarten-club.example`. Both have `tiergarten-club.example` in their trust store at `org_affiliation` and `fromStranger: ["org_affiliation"]`. Alice sends a first-contact message to Bob.
 
 **1. Alice's Sidecar resolves Bob.**
 
@@ -729,16 +689,16 @@ HTTPS:  GET https://shadow.example.org/v1/identity/bob
           }
 ```
 
-Alice's Sidecar verifies the AgentCard signature against `z6MkBobProviderPub`. Extracts Bob's pk and A2A endpoint.
+Alice's Sidecar verifies the AgentCard signature against `z6MkBobProviderPub` and extracts Bob's pk and A2A endpoint.
 
 **2. Alice constructs the envelope.**
 
-Envelope JWS header:
+JWS header:
 ```json
 { "alg":"EdDSA","typ":"shadownet-env+jwt","kid":"alice@sh4dow.org" }
 ```
 
-Envelope payload (with Alice's Hub affiliation credential):
+Payload:
 ```json
 {
   "v":       "0.2",
@@ -748,15 +708,13 @@ Envelope payload (with Alice's Hub affiliation credential):
   "exp":     1730000350,
   "msgHash": "sha256:Zk9...",
   "body": {
-    "text":   "Hi Bob — saw you at Tuesday's meetup. Want to grab dinner Thursday?",
+    "text":   "Hi Bob — want to grab dinner Thursday?",
     "intent": "urn:shadownet:intent:scheduling_v1",
     "data":   { "propose": { "windows": ["2026-05-14T18:00:00Z/PT3H"] } }
   },
-  "creds": ["<alice's org_affiliation credential JWS, iss=tiergarten-club.example, org=tiergarten-club.example>"]
+  "creds": ["<org_affiliation credential JWS, iss=tiergarten-club.example, org=tiergarten-club.example>"]
 }
 ```
-
-`msgHash` is over the canonical A2A message minus the Shadownet metadata key.
 
 **3. Alice POSTs A2A `message:send` to Bob's endpoint.**
 
@@ -771,7 +729,7 @@ Content-Type: application/a2a+json
   "message": {
     "role": "ROLE_USER",
     "parts": [
-      { "text": "Hi Bob — saw you at Tuesday's meetup. Want to grab dinner Thursday?" }
+      { "text": "Hi Bob — want to grab dinner Thursday?" }
     ],
     "messageId": "01HZ7K3CWAB4D6N5XT0M2EXAMPLE",
     "contextId": "01HZ7K2BV5R2K0DW3FCONTEXT0001",
@@ -783,27 +741,27 @@ Content-Type: application/a2a+json
 }
 ```
 
-**4. Bob's Sidecar validates.**
+**4. Bob's Sidecar validates** per §8.6:
 
   1. `A2A-Extensions` includes `urn:shadownet:0.2`. ✓
   2. Envelope JWS present in metadata. `typ == "shadownet-env+jwt"`. ✓
   3. Envelope claims valid: `to == bob@example.org`, `exp > now`, `exp - iat ≤ 300`. ✓
   4. Resolve `alice@sh4dow.org`:
      - DNS: `_shadownet.sh4dow.org TXT → ep=...; pk=z6MkAliceProviderPub...`
-     - HTTPS: `GET .../identity/alice → signed AgentCard`. Verify signature against `z6MkAliceProviderPub`. ✓
+     - HTTPS: `GET .../identity/alice → signed AgentCard`. Signature verified. ✓
      - Extract `shadownet:pk = z6MkAlicePub...`.
-  5. JWS `kid == "alice@sh4dow.org"` matches `from`. Verify envelope signature against `z6MkAlicePub`. ✓
-  6. Recompute `msgHash` from received message minus Shadownet metadata. Matches envelope's value. ✓
+  5. JWS `kid == "alice@sh4dow.org"` matches `from`. Signature verified. ✓
+  6. `msgHash` recomputed; matches. ✓
   7. `(alice@sh4dow.org, 01HZ7K3...)` not in replay cache. ✓
-  8. Validate `creds[0]`:
-     - `iss = tiergarten-club.example`. DNS lookup for issuer's `pk`. Verify JWS. ✓
+  8. Credential `creds[0]` validated:
+     - `iss = tiergarten-club.example`; signature verified. ✓
      - `kind = "org_affiliation"`, `sub = "alice@sh4dow.org"`, `org = "tiergarten-club.example"`. ✓
      - `iss == org` (§6.6 rule 1). ✓
      - `exp > now`. ✓
-     - Fetch `https://tiergarten-club.example/.well-known/shadownet/status/2026q4` (cached). Bit `0871` is 0. ✓
+     - Status list bit `0871` = 0. ✓
      - `(tiergarten-club.example, org_affiliation)` in Bob's trust store. ✓
   9. Alice not in Bob's contacts. `policy.fromStranger = ["org_affiliation"]`; the credential satisfies. ✓
-  10. Route: `stranger_review` (Alice is a stranger who passed the Hub's vetting; Bob's Subject reviews). Persist envelope.
+  10. Route: `stranger_review`. Persist envelope.
 
 **5. Bob's Sidecar returns A2A Message response.**
 
@@ -824,11 +782,9 @@ A2A-Extensions: urn:shadownet:0.2
 }
 ```
 
-`accepted` means the envelope was validated and routed. Whether Bob ever sees it is Bob's concern; the response leaks no receiver-side state.
+**6. Bob reviews and accepts Alice into contacts.** Future envelopes from her route to inbox.
 
-**6. Bob's host LLM reviews and Bob accepts Alice into contacts.** Future envelopes from her route to inbox.
-
-**7. Bob replies.** Bob's host LLM constructs a reply envelope (`from=bob@example.org`, `to=alice@sh4dow.org`, same `contextId`, signed by Bob's `shadownet:pk`), POSTs A2A `message:send` to Alice's endpoint. Alice's Sidecar performs the symmetric validation. Bob is not in Alice's contacts — but the reply's `contextId` matches Alice's own recent outbound. Per §9's auto-add rule, Alice's Sidecar adds Bob to her contact graph and routes the reply to `inbox` directly. The cross-Sidecar approval round-trip is skipped because the contextId binding proves this is a genuine reply.
+**7. Bob replies.** Bob's Sidecar constructs a reply envelope (`from=bob@example.org`, `to=alice@sh4dow.org`, same `contextId`, signed by Bob's `shadownet:pk`) and POSTs A2A `message:send` to Alice's endpoint. Alice's Sidecar performs symmetric validation. Bob is not in Alice's contacts, but the reply's `contextId` matches Alice's recent outbound — per §9, Alice's Sidecar adds Bob to her contact graph and routes the reply to `inbox`.
 
 ## Appendix C — Wire artifact reference
 
@@ -836,26 +792,19 @@ The complete wire surface of v0.2:
 
 1. **Provider DNS TXT.** `_shadownet.<domain> IN TXT "v=0.2; ep=...; pk=..."`. One per provider.
 2. **Signed A2A AgentCard.** A2A §8 with Shadownet extension fields (`shadownet:v`, `shadownet:pk`). Served at `<ep>/identity/<local>`.
-3. **Credential JWS.** `typ: shadownet-cred+jwt`. One kind in v0.2: `org_affiliation`.
+3. **Credential JWS.** `typ: shadownet-cred+jwt`. One kind: `org_affiliation`.
 4. **CSR JWS.** `typ: shadownet-csr+jwt`. POSTed to `<iss-domain>/.well-known/shadownet/issue`. Idempotent within a ceremony.
 5. **Status list.** Gzipped bitstring at `<iss-domain>/.well-known/shadownet/status/<epoch>`.
 6. **Envelope JWS.** `typ: shadownet-env+jwt`. Carried in A2A `message.metadata["urn:shadownet:0.2"]`. Re-minted per retry attempt.
 7. **A2A `message:send` request** with `A2A-Extensions: urn:shadownet:0.2`.
-8. **A2A `Message` response** (not `Task`) with `A2A-Extensions: urn:shadownet:0.2` echo.
+8. **A2A `Message` response** with `A2A-Extensions: urn:shadownet:0.2` echo.
 
 ## Appendix D — Companion specifications
-
-This document is intentionally narrow. The following surfaces live in separate companion documents at their own cadence:
 
 | Companion | Scope |
 | --- | --- |
 | Shadownet MCP Control Surface | Host-LLM ↔ Sidecar MCP tools: name resolution, contact-graph operations, envelope send, inbox / long-poll, grant management. |
-| Shadownet Onboarding URI | `shadow://connect?ep=…&token=…` grammar for first-paste configuration of a host LLM against a Sidecar. |
-| Shadownet Intent Profiles | Application-level schemas for `body.intent` URIs (scheduling, intro, structured negotiation, etc.). |
+| Shadownet Onboarding URI | `shadow://connect?...` grammar for first-paste configuration of a host LLM against a Sidecar. |
+| Shadownet Intent Profiles | Application-level schemas for `body.intent` URIs. |
 
-Candidate v0.3 work, not v0.2:
-
-- **Keyed (domainless) addressing mode.** A second addressing path where identity is the Ed25519 public key, the endpoint is `key@ip:port` with a pinned TLS fingerprint, and no DNS or CA is required. Authenticity from the envelope JWS, confidentiality from TLS key-pinning. Lets self-hosters skip "buy a domain, set DNS, get a cert."
-- **Provider-level store-and-forward.** A minimal MX-style relay at the provider so intermittent hosts (laptops, mobile devices) work without operating a gateway. Requires honest design of queue retention, abuse prevention, and gateway-to-backend pull semantics.
-
-A Sidecar can claim conformance with v0.2 without implementing any of these companions or v0.3 candidates. Conformance with companion specs is independent and is the subject of those specs' own conformance sections.
+Conformance with v0.2 does not require any companion. Conformance with companion specs is independent and is the subject of those specs' own conformance sections.
