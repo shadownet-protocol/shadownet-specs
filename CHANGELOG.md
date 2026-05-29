@@ -2,16 +2,18 @@
 
 ## [Unreleased]
 
-- **shadow1 consolidated spec.** Replaces v0.1 RFCs 0001–0009 with a single document, `rfcs/0001-shadow1.md`. shadow1 is a profile of A2A 1.0 carrying a Shadownet envelope in extension metadata under `urn:shadow:v1`. The complete v0.1 → shadow1 delta:
-  - Names resolved via DNS (one TXT per provider) + signed AgentCard fetch. The HTTP-served per-Shadowname JWT records from v0.1 §SNS are removed.
+- **Shadownet v0.2 consolidated spec.** Replaces v0.1 RFCs 0001–0009 with one wire spec (`rfcs/0001-shadownet.md`) plus companion specs for the MCP control surface (`rfcs/0002-shadownet-mcp.md`) and the onboarding URI (`rfcs/0003-shadownet-onboarding.md`). v0.2 is a profile of A2A 1.0 carrying a Shadownet envelope in extension metadata under `urn:shadownet:0.2`. The complete v0.1 → v0.2 delta:
+  - Names resolved via DNS (one TXT per provider at `_shadownet.<domain>`) + signed AgentCard fetch. The HTTP-served per-Shadowname JWT records from v0.1 §SNS are removed.
   - Identifiers are bare Shadownames (`alice@sh4dow.org`), bare domains, and multibase Ed25519 public keys. DID method machinery (`did:key`, `did:web`, DID documents, `shadownet:delegatedIssuers`) removed entirely.
-  - Credentials are plain JWTs with three named kinds (`personhood`, `org`, `org-affiliation`). W3C VC wrapping, Verifiable Presentations, freshness proofs, and the L1/L2/L3/O1 personhood ladder all removed. Status list is a bare bitstring; no `BitstringStatusList` VC.
-  - Trust store collapsed to one surface (a flat `(issuer, accepted-kinds)` list). Predicate language removed; acceptance policy is two level lists (`from_contact`, `from_stranger`).
-  - Envelope is one JWS in A2A `message.metadata["urn:shadow:v1"]`, bound to the surrounding message via `msg_hash` (SHA-256 over canonical JSON minus the Shadownet metadata key). No session token, no `X-Shadownet-Presentation` header, no nonce challenge.
+  - Credentials are plain JWTs with three named kinds (`personhood`, `org`, `org_affiliation`). W3C VC wrapping, Verifiable Presentations, freshness proofs, and the L1/L2/L3/O1 personhood ladder all removed. Status list is a bare bitstring at `<iss>/.well-known/shadownet/status/<epoch>`; no `BitstringStatusList` VC.
+  - Trust store collapsed to one surface (a flat `(issuer, accepted-kinds)` list). Predicate language removed; acceptance policy is two kind lists (`fromContact`, `fromStranger`).
+  - Envelope is one JWS in A2A `message.metadata["urn:shadownet:0.2"]`, bound to the surrounding message via `msgHash` (SHA-256 over canonical JSON minus the Shadownet metadata key). No session token, no `X-Shadownet-Presentation` header, no nonce challenge. JWS `typ` values are `shadownet-env+jwt`, `shadownet-cred+jwt`, `shadownet-csr+jwt`.
   - Receiver responses are A2A `Message` (not `Task`), inheriting A2A's agent-opacity principle: no quarantine state machine on the wire. Three receiver-side routes (inbox / stranger_review / rejected) but only the rejection is observable to senders.
-  - Same-affiliation routing recommendation: intra-org envelopes (both sender and recipient hold valid `org-affiliation` for the same domain) MAY route to inbox without explicit contact-graph entry.
-  - CSR endpoint at `<iss>/.well-known/shadow/issue` is idempotent within a ceremony; the v0.1 proof-session state machine and HMAC callback are removed.
-  - MCP control surface (v0.1 RFC-0007), onboarding URI (v0.1 RFC-0008), and OAuth 2.1 profile (v0.1 RFC-0009) moved out of the wire spec into planned companion documents listed in shadow1 Appendix D.
+  - Errors are RFC 7807 `application/problem+json` with `type` URN (`urn:shadownet:error:<code>`).
+  - Same-affiliation routing recommendation: intra-org envelopes (both sender and recipient hold valid `org_affiliation` for the same domain) MAY route to inbox without explicit contact-graph entry.
+  - CSR endpoint at `<iss>/.well-known/shadownet/issue` is idempotent within a ceremony; the v0.1 proof-session state machine and HMAC callback are removed.
+  - Naming conventions made consistent: JSON field names camelCase, value strings (kinds, error codes) snake_case, URN suffixes snake_case, JWS `typ` kebab + `+jwt`.
+  - Companion specs: MCP control surface (RFC 0002) defines the host-LLM ↔ Sidecar surface; onboarding URI (RFC 0003) defines `shadow://connect?ep=…&token=…`. v0.1's OAuth 2.1 profile (RFC-0009) is not carried over; opaque bearer tokens are sufficient for the local-only control plane.
   - The v0.1 RFCs 0001–0009 are deleted from the repo; the `v0.1-final` git tag preserves a stable reference for implementations still tracking that surface.
 
 - RFC-0005: added §Lifecycle defining the record time-validity contract. Pins the wire invariant that resolution responses MUST NOT carry a pre-expired envelope, defines two valid provider implementation patterns (re-issuance on resolve vs. store-and-serve), gives normative client-side renewal guidance (re-register before `iat + ttl - max(60, ttl/10)`), and recommends resolvers distinguish expiry from malformedness in their error taxonomy. Recommended default `ttl` raised from the previous ad-hoc 300 s to 3600 s. Wire shape unchanged.

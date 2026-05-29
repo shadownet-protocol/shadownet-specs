@@ -12,7 +12,7 @@ c3. **Standards, not new wheels.** Names via DNS, transport via [A2A](https://a2
 
 | Path | Contents |
 | --- | --- |
-| [`rfcs/`](./rfcs/) | [`0001-shadow1.md`](./rfcs/0001-shadow1.md), the consolidated wire spec. Future numbered RFCs are amendment proposals against it. |
+| [`rfcs/`](./rfcs/) | [`0001-shadownet.md`](./rfcs/0001-shadownet.md), the consolidated wire spec (Shadownet v0.2). Companion specs cover the MCP control surface and onboarding URI. Future numbered RFCs are amendment proposals against the consolidated specs. |
 | [`schemas/`](./schemas/) | JSON Schemas referenced by the RFCs. |
 | [`examples/birthday-flow.md`](./examples/birthday-flow.md) | Wire-level walkthrough across mixed cloud + self-hosted deployments — typed Interaction Profile path. |
 | [`examples/free-form-coordination.md`](./examples/free-form-coordination.md) | Companion walkthrough — default free-form `text` envelope, no `interaction` URI. |
@@ -39,7 +39,7 @@ Legacy repos (`shadownet-go`, `shadownet-py`, `shadownet-conformance`) remain re
 
 ## Status
 
-`shadow1` is the current draft consolidated wire spec. It replaces v0.1's nine RFCs with one document; the v0.1 text is preserved under the `v0.1-final` git tag for implementations still tracking that surface. The Go and Python SDKs and the cross-impl conformance suite currently ship the v0.1 surface and will migrate to shadow1 as it stabilizes. Canonical operator domain is `sh4dow.org`. No public deployment yet.
+Shadownet **v0.2** is the current draft. It replaces v0.1's nine RFCs with a consolidated wire spec ([`0001-shadownet.md`](./rfcs/0001-shadownet.md)) and two companion specs (MCP control surface, onboarding URI); the v0.1 text is preserved under the `v0.1-final` git tag for implementations still tracking that surface. v0.2 is intentionally pre-stable; breaking changes between minor versions are expected until 1.0. The Go and Python SDKs and the cross-impl conformance suite currently ship the v0.1 surface and will migrate to v0.2 as it stabilizes. Canonical operator domain is `sh4dow.org`. No public deployment yet.
 
 ## License
 
