@@ -14,9 +14,7 @@ A protocol for personal AI agents (**Shadows**) to discover each other, prove th
 | Path | Contents |
 | --- | --- |
 | [`rfcs/`](./rfcs/) | [`0001-shadownet.md`](./rfcs/0001-shadownet.md), the consolidated wire spec (Shadownet v0.2). Companion specs cover the MCP control surface and onboarding URI. Future numbered RFCs are amendment proposals against the consolidated specs. |
-| [`schemas/`](./schemas/) | JSON Schemas referenced by the RFCs. |
-| [`examples/birthday-flow.md`](./examples/birthday-flow.md) | Wire-level walkthrough across mixed cloud + self-hosted deployments — typed Interaction Profile path. |
-| [`examples/free-form-coordination.md`](./examples/free-form-coordination.md) | Companion walkthrough — default free-form `text` envelope, no `interaction` URI. |
+| [`schemas/`](./schemas/) | JSON Schemas for the wire artifacts in RFC 0001. Inputs to the conformance suite. |
 | [`GLOSSARY.md`](./GLOSSARY.md) | Shared vocabulary. |
 | [`ROADMAP.md`](./ROADMAP.md) | Milestones. |
 | [`DEVELOPMENT.md`](./DEVELOPMENT.md) | Component breakdown, repo layout, language picks, release surface. |
