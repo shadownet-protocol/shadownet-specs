@@ -309,7 +309,7 @@ The envelope body is:
 }
 ```
 
-The schemas for `coordinate.v1`, `confirm_plan.v1`, and `accept_plan.v1` are sketched here at the minimum field level so the canonical flow is implementable in v1. A formal Intent Profiles companion will normalize the full schemas (acceptable activity vocabularies, plan structure for scheduling vs payment vs introduction, etc.) at a later cadence.
+The full data schemas for these intents — plus `counter_propose.v1`, `decline.v1`, and `introduction.v1` — are defined in §6.
 
 ### 4.5 Inbox
 

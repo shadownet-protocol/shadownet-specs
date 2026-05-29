@@ -6,7 +6,7 @@ A protocol for personal AI agents (**Shadows**) to discover each other, prove th
 
 1. **Shadow ↔ Shadow, never Shadow ↔ stranger.** Agents speak only to other agents; each agent speaks only to its own human (via [MCP](https://modelcontextprotocol.io)). A human never receives AI-generated content claiming to be from another person. We've all hated that.
 2. **Define the network, don't run the server.** Shadownet is a protocol, not a service. Anyone can run their own SCA, their own SNS, their own Sidecar. Data stays where its owner puts it. The reference cloud is one provider among many, never a hub everyone has to use.
-c3. **Standards, not new wheels.** Names via DNS, transport via [A2A](https://a2a-protocol.org/) (Shadownet ships as an A2A extension under `urn:shadow:v1`), host-agent control plane via [MCP](https://modelcontextprotocol.io). Identity is raw Ed25519 keys bound to Shadownames by provider-signed AgentCards. Drops into any A2A-capable agent runtime.
+c3. **Standards, not new wheels.** Names via DNS, transport via [A2A](https://a2a-protocol.org/) (Shadownet ships as an A2A extension under `urn:shadownet:0.2`), host-agent control plane via [MCP](https://modelcontextprotocol.io). Identity is raw Ed25519 keys bound to Shadownames by provider-signed AgentCards. Drops into any A2A-capable agent runtime.
 
 ## What's in this repo
 

@@ -1,8 +1,8 @@
 ---
 rfc: 0003
 title: Shadownet Onboarding
-version: shadow1
-shadow1: urn:shadow:v1
+version: 0.2
+extension: urn:shadownet:0.2
 status: 📝 Draft
 authors: []
 created: 2026-05-29
@@ -16,7 +16,7 @@ This document defines how a host LLM (Claude Desktop, Hermes, OpenClaw, any MCP 
 
 The design goal is **one paste**. The user copies one `shadow://connect?...` URL from the Sidecar's account portal into the host LLM, and the host derives everything else. Browser-originated flows (clicking a "Configure Claude Desktop" button in the portal) use a leak-resistant handoff variant so bearer tokens never sit in URLs that pass through clipboards or browser history.
 
-This is a companion to [shadow1](./0001-shadownet.md) (`urn:shadow:v1`) and to the [MCP control surface](./0002-shadownet-mcp.md). shadow1 conformance does not require implementing this companion; Sidecars whose operators hand-configure host LLMs may skip it. A Sidecar that advertises automated host onboarding MUST implement at least §3 and §4.
+This is a companion to [shadow1](./0001-shadownet.md) (`urn:shadownet:0.2`) and to the [MCP control surface](./0002-shadownet-mcp.md). shadow1 conformance does not require implementing this companion; Sidecars whose operators hand-configure host LLMs may skip it. A Sidecar that advertises automated host onboarding MUST implement at least §3 and §4.
 
 ## 2. Conventions
 
@@ -32,7 +32,7 @@ The URI a user pastes (or clicks) to onboard a host LLM.
 
 ```
 URI       = "shadow://connect" [ "/" ] "?" Query
-Query     = "mcp=" McpEndpoint "&" Credential [ "&name=" Shadowname ]
+Query     = "ep=" McpEndpoint "&" Credential [ "&name=" Shadowname ]
 Credential = "token=" Token | "handoff=" Handoff
 McpEndpoint = <"https" or loopback "http" URL, percent-encoded>
 Token     = <opaque bearer, percent-encoded>
@@ -57,7 +57,7 @@ If both `token` and `handoff` are present, or neither, the host MUST reject the 
 The credential is the literal bearer, percent-encoded in the URI.
 
 ```
-shadow://connect?mcp=https%3A%2F%2Fapp.sh4dow.org%2Fmcp%2Falice&token=eyJhbGci...&name=alice%40sh4dow.org
+shadow://connect?ep=https%3A%2F%2Fapp.sh4dow.org%2Fmcp%2Falice&token=eyJhbGci...&name=alice%40sh4dow.org
 ```
 
 **Use when:** the URI is typed directly into a prompt or pasted through a channel the OS does not log (terminal stdin, paste-into-app where clipboard is short-lived).
@@ -69,7 +69,7 @@ shadow://connect?mcp=https%3A%2F%2Fapp.sh4dow.org%2Fmcp%2Falice&token=eyJhbGci..
 The credential is a short-lived single-use code. The host trades the code for a bearer at §4.
 
 ```
-shadow://connect?mcp=https%3A%2F%2Fapp.sh4dow.org%2Fmcp%2Falice&handoff=8K3J9-W2L1Q-Y5R7T
+shadow://connect?ep=https%3A%2F%2Fapp.sh4dow.org%2Fmcp%2Falice&handoff=8K3J9-W2L1Q-Y5R7T
 ```
 
 **Use when:** the URI passes through any channel that could log it (browser address bar, clipboard, ticket system). The code is single-use and expires; even if it leaks, the window for abuse is narrow.
@@ -79,13 +79,13 @@ shadow://connect?mcp=https%3A%2F%2Fapp.sh4dow.org%2Fmcp%2Falice&handoff=8K3J9-W2
 When the URI carries a `handoff` code, the host LLM redeems it via HTTPS POST:
 
 ```
-POST <mcp-origin>/.well-known/shadow/onboard/handoff/<code>
+POST <mcp-origin>/.well-known/shadownet/onboard/handoff/<code>
 Content-Type: application/json
 
 {}
 ```
 
-`<mcp-origin>` is the scheme + host + port of the `mcp` parameter (e.g., `https://app.sh4dow.org` for `mcp=https://app.sh4dow.org/mcp/alice`).
+`<mcp-origin>` is the scheme + host + port of the `mcp` parameter (e.g., `https://app.sh4dow.org` for `ep=https://app.sh4dow.org/mcp/alice`).
 
 The body is an empty JSON object reserved for forward compatibility; future revisions MAY define request fields.
 
@@ -132,7 +132,7 @@ Sidecars SHOULD set handoff TTL to **at least 5 minutes and at most 15 minutes**
 
 3. Obtain the bearer token:
    a. Inline form: token is already in the URI (percent-decoded).
-   b. Handoff form: POST to <mcp-origin>/.well-known/shadow/onboard/handoff/<code>.
+   b. Handoff form: POST to <mcp-origin>/.well-known/shadownet/onboard/handoff/<code>.
       On 200, extract `token`. On 4xx/5xx, surface to user and stop.
 
 4. Connect to MCP at the `mcp` URL with Authorization: Bearer <token>.
@@ -233,7 +233,7 @@ Content-Type: application/json
   "shadow1":      true,
   "shadowname":   "alice@sh4dow.org",
   "mcpEndpoint":  "https://app.sh4dow.org/mcp/alice",
-  "connectUri":   "shadow://connect?mcp=https%3A%2F%2Fapp.sh4dow.org%2Fmcp%2Falice&token=eyJhbGci..."
+  "connectUri":   "shadow://connect?ep=https%3A%2F%2Fapp.sh4dow.org%2Fmcp%2Falice&token=eyJhbGci..."
 }
 ```
 
@@ -262,7 +262,7 @@ The `connectUri` field MUST be inline-form (token directly); the bundle endpoint
 
 **`name` hint is not authenticated.** The `name=<shadowname>` parameter in the URI is informational. A malicious URI could claim to be for `alice@sh4dow.org` while actually delivering tokens for an attacker-controlled Shadowname. Hosts MUST verify the actual Shadowname via the MCP `identity` tool after connecting (§5 step 5), and MUST warn the user on mismatch.
 
-**Handoff endpoint abuse.** Unauthenticated POST to `/.well-known/shadow/onboard/handoff/<code>` is a discoverable surface. Sidecars MUST rate-limit by source IP and by `<code>` prefix to prevent brute-force enumeration of valid codes.
+**Handoff endpoint abuse.** Unauthenticated POST to `/.well-known/shadownet/onboard/handoff/<code>` is a discoverable surface. Sidecars MUST rate-limit by source IP and by `<code>` prefix to prevent brute-force enumeration of valid codes.
 
 ## 9. Out of scope
 
@@ -280,7 +280,7 @@ The `connectUri` field MUST be inline-form (token directly); the bundle endpoint
 Portal generates a handoff code for Alice's tenant.
 Portal opens:
 
-  shadow://connect?mcp=https%3A%2F%2Fapp.sh4dow.org%2Fmcp%2Falice
+  shadow://connect?ep=https%3A%2F%2Fapp.sh4dow.org%2Fmcp%2Falice
                   &handoff=8K3J9-W2L1Q-Y5R7T
                   &name=alice%40sh4dow.org
 ```
@@ -291,7 +291,7 @@ Portal opens:
 1. Parses URI. Grammar OK. handoff present, token absent. ✓
 2. Shows dialog: "Configure Claude Desktop for alice@sh4dow.org? [Yes] [No]"
 3. User clicks Yes.
-4. POSTs https://app.sh4dow.org/.well-known/shadow/onboard/handoff/8K3J9-W2L1Q-Y5R7T
+4. POSTs https://app.sh4dow.org/.well-known/shadownet/onboard/handoff/8K3J9-W2L1Q-Y5R7T
    with empty JSON body.
 5. ◄ 200 OK { "token": "eyJhbGci...", "expiresIn": 600 }
 6. Persists (mcpEndpoint, token) to keychain.
