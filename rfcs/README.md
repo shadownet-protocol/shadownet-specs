@@ -1,6 +1,10 @@
 # RFCs
 
-Numbered proposals. Copy `0000-template.md` to the next free number and open a PR.
+`0001-shadow1.md` is the current Shadownet wire spec.
+
+Future numbered RFCs in this directory are amendment proposals against shadow1. When an amendment is accepted, the spec doc is updated and the amendment RFC is archived. This keeps one canonical source of truth for "what does the wire say today" and a per-proposal trail for history.
+
+Copy `0000-template.md` to the next free number and open a PR.
 
 ## Status
 
@@ -11,12 +15,4 @@ Numbered proposals. Copy `0000-template.md` to the next free number and open a P
 | # | Title | Status |
 | --- | --- | --- |
 | [0000](./0000-template.md) | Template | — |
-| [0001](./0001-overview.md) | Shadownet Protocol Overview | 📝 Draft |
-| [0002](./0002-identity.md) | Shadow Identity | 📝 Draft |
-| [0003](./0003-credentials.md) | Shadownet Credentials | 📝 Draft |
-| [0004](./0004-sca.md) | Shadow Certificate Authority | 📝 Draft |
-| [0005](./0005-sns.md) | Shadow Name Service | 📝 Draft |
-| [0006](./0006-a2a-profile.md) | Shadownet Profile of A2A | 📝 Draft |
-| [0007](./0007-mcp-tools.md) | MCP Control Surface for Shadows | 📝 Draft |
-| [0008](./0008-onboarding.md) | Sidecar Onboarding Surface | 📝 Draft |
-| [0009](./0009-authorization.md) | Sidecar Authorization (OAuth 2.1 Profile) | 📝 Draft |
+| [0001](./0001-shadow1.md) | Shadownet Protocol (shadow1) | 📝 Draft |

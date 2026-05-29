@@ -6,13 +6,13 @@ A protocol for personal AI agents (**Shadows**) to discover each other, prove th
 
 1. **Shadow ↔ Shadow, never Shadow ↔ stranger.** Agents speak only to other agents; each agent speaks only to its own human (via [MCP](https://modelcontextprotocol.io)). A human never receives AI-generated content claiming to be from another person. We've all hated that.
 2. **Define the network, don't run the server.** Shadownet is a protocol, not a service. Anyone can run their own SCA, their own SNS, their own Sidecar. Data stays where its owner puts it. The reference cloud is one provider among many, never a hub everyone has to use.
-3. **Standards, not new wheels.** Identity via [W3C DIDs](https://www.w3.org/TR/did-core/), claims via [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/), agent transport via [Google A2A](https://google.github.io/A2A/), human control via [Anthropic MCP](https://modelcontextprotocol.io). Drops into any A2A-capable agent runtime — Hermes, OpenClaw, Claude agents, anything that speaks MCP.
+c3. **Standards, not new wheels.** Names via DNS, transport via [A2A](https://a2a-protocol.org/) (Shadownet ships as an A2A extension under `urn:shadow:v1`), host-agent control plane via [MCP](https://modelcontextprotocol.io). Identity is raw Ed25519 keys bound to Shadownames by provider-signed AgentCards. Drops into any A2A-capable agent runtime.
 
 ## What's in this repo
 
 | Path | Contents |
 | --- | --- |
-| [`rfcs/`](./rfcs/) | The seven v0.1 RFCs (Overview, Identity, Credentials, SCA, SNS, A2A Profile, MCP Tools). |
+| [`rfcs/`](./rfcs/) | [`0001-shadow1.md`](./rfcs/0001-shadow1.md), the consolidated wire spec. Future numbered RFCs are amendment proposals against it. |
 | [`schemas/`](./schemas/) | JSON Schemas referenced by the RFCs. |
 | [`examples/birthday-flow.md`](./examples/birthday-flow.md) | Wire-level walkthrough across mixed cloud + self-hosted deployments — typed Interaction Profile path. |
 | [`examples/free-form-coordination.md`](./examples/free-form-coordination.md) | Companion walkthrough — default free-form `text` envelope, no `interaction` URI. |
@@ -39,7 +39,7 @@ Legacy repos (`shadownet-go`, `shadownet-py`, `shadownet-conformance`) remain re
 
 ## Status
 
-The v0.1 protocol is drafted across seven RFCs. The Go and Python SDKs both ship the full v0.1 surface; the cross-impl wire-level conformance suite ships too. Canonical domain is `sh4dow.org`. The TypeScript SDK is next. No public deployment yet.
+`shadow1` is the current draft consolidated wire spec. It replaces v0.1's nine RFCs with one document; the v0.1 text is preserved under the `v0.1-final` git tag for implementations still tracking that surface. The Go and Python SDKs and the cross-impl conformance suite currently ship the v0.1 surface and will migrate to shadow1 as it stabilizes. Canonical operator domain is `sh4dow.org`. No public deployment yet.
 
 ## License
 
