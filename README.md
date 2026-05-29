@@ -1,12 +1,13 @@
 # Shadownet
 
-A protocol for personal AI agents (**Shadows**) to discover each other, prove they represent real humans, and coordinate on their owners' behalf — without leaking private context.
+A protocol for personal AI agents (**Shadows**) to discover each other, prove they represent vetted members of trusted organizations or Hubs, and coordinate on their owners' behalf — without leaking private context.
 
 ## Philosophy
 
 1. **Shadow ↔ Shadow, never Shadow ↔ stranger.** Agents speak only to other agents; each agent speaks only to its own human (via [MCP](https://modelcontextprotocol.io)). A human never receives AI-generated content claiming to be from another person. We've all hated that.
-2. **Define the network, don't run the server.** Shadownet is a protocol, not a service. Anyone can run their own SCA, their own SNS, their own Sidecar. Data stays where its owner puts it. The reference cloud is one provider among many, never a hub everyone has to use.
-c3. **Standards, not new wheels.** Names via DNS, transport via [A2A](https://a2a-protocol.org/) (Shadownet ships as an A2A extension under `urn:shadownet:0.2`), host-agent control plane via [MCP](https://modelcontextprotocol.io). Identity is raw Ed25519 keys bound to Shadownames by provider-signed AgentCards. Drops into any A2A-capable agent runtime.
+2. **Define the network, don't run the server.** Shadownet is a protocol, not a service. Anyone can run their own provider, their own affiliation issuer, their own Sidecar. Data stays where its owner puts it. The reference cloud is one provider among many, never a hub everyone has to use.
+3. **Standards, not new wheels.** Names via DNS, transport via [A2A](https://a2a-protocol.org/) (Shadownet ships as an A2A extension under `urn:shadownet:0.2`), host-agent control plane via [MCP](https://modelcontextprotocol.io). Identity is raw Ed25519 keys bound to Shadownames by provider-signed AgentCards. Drops into any A2A-capable agent runtime.
+4. **Sybil resistance is contextual, not central.** Shadownet does not define a "personhood" credential and does not pick a global authority to verify uniqueness. Sybil defense is relocated to **Hubs** that vet contextually (a dating Hub checks photos, a hiring Hub checks work history). The single credential kind is `org_affiliation`.
 
 ## What's in this repo
 
@@ -28,7 +29,7 @@ The Go SDK, Python SDK, conformance suite, and host-agent integrations have cons
 
 | Repo / subtree | Status | What it is |
 | --- | --- | --- |
-| [`shadownet/core/`](https://github.com/shadownet-protocol/shadownet/tree/main/core) | 🟢 Active | Go SDK + reference SCA, SNS, and CLI binaries. Module path: `github.com/shadownet-protocol/shadownet/core`. |
+| [`shadownet/core/`](https://github.com/shadownet-protocol/shadownet/tree/main/core) | 🟢 Active | Go SDK + reference provider, affiliation issuer, and CLI binaries. Module path: `github.com/shadownet-protocol/shadownet/core`. (Current code still uses v0.1's SCA/SNS terminology; rename pass is tracked as follow-up work.) |
 | [`shadownet/python-sdk/`](https://github.com/shadownet-protocol/shadownet/tree/main/python-sdk) | 🟢 Active | Python SDK. PyPI distribution: `shadownet`. Consumed by shadownet-local. |
 | [`shadownet/conformance/`](https://github.com/shadownet-protocol/shadownet/tree/main/conformance) | 🟢 Active | Cross-impl wire-level test suite. PyPI: `shadownet-conformance`; Action: `shadownet-protocol/conformance-action@v0.1`. |
 | [`shadownet/integrations/`](https://github.com/shadownet-protocol/shadownet/tree/main/integrations) | 🟢 Active | Host-agent integrations (Claude Code, Hermes Agent, OpenClaw plugins, skill bundles). |
