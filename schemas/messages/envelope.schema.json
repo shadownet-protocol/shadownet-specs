@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:shadownet:0.2:schema:envelope",
   "title": "Shadownet Envelope JWT payload",
-  "description": "Payload of a shadownet-env+jwt. Defined in rfcs/0001-shadownet.md §8.3. Carried as a JWS-compact string in the A2A message's metadata under key 'urn:shadownet:0.2'.",
+  "description": "Payload of a shadownet-env+jwt. Defined in rfcs/0001-shadownet.md §8.3. Carried as a JWS-compact string in the A2A message's metadata under key 'urn:shadownet:0.2'. The `from` and `to` fields accept either Shadownames (Shadowname mode) or bare multibase Ed25519 public keys (direct mode).",
   "type": "object",
   "required": ["v", "from", "to", "iat", "exp", "msgHash", "body"],
   "additionalProperties": true,
@@ -13,14 +13,18 @@
       "description": "Protocol version."
     },
     "from": {
-      "type": "string",
-      "description": "Sender Shadowname (canonical lowercase). MUST equal the JWS header `kid`.",
-      "pattern": "^[a-z0-9._-]{1,63}@[a-z0-9.-]+$"
+      "description": "Sender identifier — Shadowname or bare multibase Ed25519 public key. MUST equal the JWS header `kid`.",
+      "oneOf": [
+        { "type": "string", "pattern": "^[a-z0-9._-]{1,63}@[a-z0-9.-]+$" },
+        { "type": "string", "pattern": "^z6Mk[1-9A-HJ-NP-Za-km-z]+$" }
+      ]
     },
     "to": {
-      "type": "string",
-      "description": "Recipient Shadowname (canonical lowercase).",
-      "pattern": "^[a-z0-9._-]{1,63}@[a-z0-9.-]+$"
+      "description": "Recipient identifier — Shadowname or bare multibase Ed25519 public key.",
+      "oneOf": [
+        { "type": "string", "pattern": "^[a-z0-9._-]{1,63}@[a-z0-9.-]+$" },
+        { "type": "string", "pattern": "^z6Mk[1-9A-HJ-NP-Za-km-z]+$" }
+      ]
     },
     "iat": {
       "type": "integer",

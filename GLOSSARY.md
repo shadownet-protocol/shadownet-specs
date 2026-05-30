@@ -15,7 +15,9 @@ Alphabetical. Terms are defined as they appear in [`rfcs/0001-shadownet.md`](./r
 | Provider | Authoritative for the Shadowname → AgentCard binding within a domain. Identified by domain; signs AgentCards with a key published in DNS at `_shadownet.<domain>`. |
 | Receiver | A Shadow processing an inbound envelope. Applies validation (§8.6) then classification (§9). |
 | Shadow | The addressable agent. Identified by a Shadowname. |
-| Shadowname | Human-readable address of a Shadow, `local@provider` (e.g., `alice@sh4dow.org`). |
+| Shadowname | Human-readable alias for a Shadow's key, `local@provider` (e.g., `alice@sh4dow.org`). Bound to a public key by a provider's signed AgentCard. |
+| Shadowname mode | Addressing a Shadow via a Shadowname, resolved through DNS and a provider-signed AgentCard. |
+| Direct mode | Addressing a Shadow via the connection URI `shadow://key:<pubkey>@<host>:<port>`, with no DNS or provider involved. The key embedded in the URI is the identity; the AgentCard is fetched from the endpoint and self-signed. |
 | Sidecar | The local process that holds a Shadow's keys, state, and speaks the wire. May serve one Subject (self-hosted) or many (multi-tenant). |
 | Subject | The entity an identity is about — a human, an organization persona, or an automated service. |
 | Trust store | A verifier's flat list of `(issuer-domain, [accepted-kinds])` tuples. See RFC 0001 §7.1. |
