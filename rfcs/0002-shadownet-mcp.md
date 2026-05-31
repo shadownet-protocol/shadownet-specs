@@ -26,7 +26,7 @@ Authentication is by bearer token on the `Authorization` header. Token issuance 
 
 Tool names use **snake_case**. JSON argument and result field names use **camelCase** (Shadownet [RFC 0001 §2 naming table](./0001-shadownet.md#2-conventions)). Value strings use **snake_case**. Event names use dotted lowercase.
 
-Identifiers in tool inputs and outputs accept either a Shadowname (`alice@sh4dow.org`), a direct connection URI (`shadow://key:z6Mk...@host:port`), or a bare key (multibase Ed25519) — whichever form the contact uses. Sidecars resolve the form internally and store contacts under their wire-internal identifier (Shadowname or bare key) per RFC 0001 §3.3. The token authenticates the Subject; no `subject` parameter is carried on individual calls.
+Identifiers in tool inputs and outputs accept either a Shadowname (`alice@sh4dow.org`), a direct connection URI (`shadow://key:z6Mk...@host:port`), or a bare key (multibase Ed25519) — whichever form the contact uses. Sidecars resolve the form internally and store contacts under their wire-internal shadowname (Shadowname or bare key) per RFC 0001 §3.3. The token authenticates the Subject; no `subject` parameter is carried on individual calls.
 
 Body content (`body.intent`, `body.data`) is **opaque to this surface**. Sidecars MUST pass body content unchanged between the host LLM and the envelope. Schema validation against known intent profiles is OPTIONAL and is performed at the application layer, not at the MCP control surface.
 
@@ -62,11 +62,11 @@ Resolves an identifier via Shadownet RFC 0001 §5 without adding to the contact 
 
 ```
 input:  { name: string }
-output: { identifier: string, pk: string, endpoint: string }
+output: { shadowname: string, pk: string, endpoint: string }
 error:  "resolve_failed" | "unreachable"
 ```
 
-`identifier` is the canonical wire-internal form (Shadowname or bare key).
+The `shadowname` field carries the canonical wire-internal form: a Shadowname (`local@provider`) when the contact uses Shadowname-mode addressing, or a bare multibase Ed25519 key when the contact uses direct-mode addressing. Consumers distinguish by presence of `@` per RFC 0001 §3.3.
 
 ### `contacts`
 
@@ -75,7 +75,7 @@ Lists known contacts.
 ```
 input:  { query?: string }                 // substring match on identifier or displayName
 output: { contacts: [
-  { identifier: string,                    // Shadowname or bare key
+  { shadowname: string,                    // Shadowname or bare key
     displayName?: string,
     grants:      string[],
     lastSeen?:   string                    // ISO 8601
@@ -90,7 +90,7 @@ Full record for one contact.
 ```
 input:  { name: string }
 output: {
-  identifier:  string,
+  shadowname:  string,
   displayName?: string,
   pk:          string,
   endpoint:    string,
@@ -118,7 +118,7 @@ input:  {
   profile?:     ContactProfile             // §5
 }
 output: {
-  identifier:    string,
+  shadowname:    string,
   trustWarning?: { untrustedIssuers: string[] }   // present iff cached credentials reference issuers not in the trust store
 }
 error:  "resolve_failed" | "already_contact"
