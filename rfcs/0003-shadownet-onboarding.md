@@ -132,7 +132,7 @@ Sidecars SHOULD set handoff TTL to between 5 and 15 minutes, measured from code 
 3. Connect to MCP at the `mcp` URL with Authorization: Bearer <accessToken>.
    Perform MCP initialize handshake.
 
-4. Call the `identity` tool (RFC-0002 §4.1) and display the Shadowname to the user.
+4. Call the `identity` tool ([RFC 0002](./0002-shadownet-mcp.md) §4) and display the Shadowname to the user.
 
 5. Persist (mcpEndpoint, accessToken, refreshToken?, expiresAt?) in secure storage.
 

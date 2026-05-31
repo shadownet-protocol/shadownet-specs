@@ -15,20 +15,18 @@ Goal: stabilize v0.2 against at least two interoperating implementations before 
 | Code | Migrate reference Sidecar and SDKs to v0.2 wire shapes (envelope, AgentCard, credential, CSR). |
 | Code | Cross-implementation conformance suite against v0.2. |
 | Code | Reference affiliation issuer for at least one canonical Hub use case (meetup or similar). |
-| Code | Schemas (JSON Schema or equivalent) derived from v0.2 spec and shipped alongside the SDKs, not in this repo. |
 
 ## v0.3 candidates
 
 | Candidate | Scope |
 | --- | --- |
-| **Keyed (domainless) addressing** | A second addressing path where identity is the Ed25519 public key, the endpoint is `key@ip:port` with a pinned TLS fingerprint, and no DNS or CA is required. Lets self-hosters skip "buy a domain, set DNS, get a cert." |
 | **Provider-level store-and-forward** | A minimal MX-style relay at the provider so intermittent hosts (laptops, mobile devices) work without operating a gateway. Requires honest design of queue retention, abuse prevention, and gateway-to-backend pull semantics. |
+| **Intent profiles** | Application-level interaction schemas (scheduling, intro, payment, structured negotiation). Each profile would be its own companion spec, consumed through the opaque `body.intent` / `body.data` slots on `send` / `inbox`. |
 
 ## Later
 
 | Track | Action |
 | --- | --- |
-| Spec | Intent profile RFCs (scheduling, intro, structured negotiation) — analogous to iCalendar over email. |
 | Spec | AgentCard transparency log to mitigate provider equivocation. |
 | Spec | Cross-Hub introductions and Hub-to-Hub federation patterns. |
 | Code | Reference Hub server implementation. |
