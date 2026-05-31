@@ -9,7 +9,7 @@ These schemas are inputs to the conformance suite at [`shadownet-protocol/shadow
 | [`credentials/credential.schema.json`](./credentials/credential.schema.json) | Credential JWT payload (`shadownet-cred+jwt`) | RFC 0001 §6.1 |
 | [`credentials/csr.schema.json`](./credentials/csr.schema.json) | CSR JWT payload (`shadownet-csr+jwt`) | RFC 0001 §6.5 |
 | [`messages/envelope.schema.json`](./messages/envelope.schema.json) | Envelope JWT payload (`shadownet-env+jwt`) | RFC 0001 §8.3 |
-| [`agentcard/shadownet-extension.schema.json`](./agentcard/shadownet-extension.schema.json) | Shadownet extension fields on A2A AgentCard | RFC 0001 §5.3 |
+| [`agentcard/shadownet-extension.schema.json`](./agentcard/shadownet-extension.schema.json) | Shadownet extension fields on A2A AgentCard | RFC 0001 §5.4 |
 | [`errors/problem.schema.json`](./errors/problem.schema.json) | Error response (RFC 7807 `application/problem+json`) | RFC 0001 §8.8 |
 
 ## Scope

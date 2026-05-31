@@ -309,7 +309,7 @@ Host LLMs MUST ignore unrecognised event types rather than failing.
 
 ## 8. Out of scope
 
-- **Application intent profiles** (scheduling, intro, payment, structured negotiation, etc.). Each intent profile is defined in its own companion spec (RFC 0004+). The MCP surface here is intentionally content-agnostic; intent profiles reach the host LLM through the opaque `body.intent` / `body.data` slots on `send` / `inbox` and are interpreted at the application layer.
+- **Application intent profiles** (scheduling, intro, payment, structured negotiation, etc.). Each intent profile will be defined in its own future companion spec. The MCP surface here is intentionally content-agnostic; intent profiles reach the host LLM through the opaque `body.intent` / `body.data` slots on `send` / `inbox` and are interpreted at the application layer.
 - **Trust-store editing.** Not reachable from the host LLM's tool surface; belongs in the Sidecar's account portal.
 - **Audit endpoints.** Sidecars MAY expose audit logs over a separate surface; format is not standardized here.
 - **OAuth-style scoped tokens.** Bearer tokens grant full access; deployments needing scopes issue separate tokens per scope.

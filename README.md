@@ -8,7 +8,7 @@ A protocol for personal AI agents (**Shadows**) to discover each other, prove th
 2. **Define the network, don't run the server.** Shadownet is a protocol, not a service. Anyone can run their own provider, their own affiliation issuer, their own Sidecar. Data stays where its owner puts it. The reference cloud is one provider among many, never a hub everyone has to use.
 3. **Standards, not new wheels.** Names via DNS, transport via [A2A](https://a2a-protocol.org/) (Shadownet ships as an A2A extension under `urn:shadownet:0.2`), host-agent control plane via [MCP](https://modelcontextprotocol.io). Identity is raw Ed25519 keys. Drops into any A2A-capable agent runtime.
 4. **Reachability is free; names are a convenience.** Two addressing modes, equally valid. Shadowname mode (`alice@sh4dow.org`) for human-readable names with a provider relationship. Direct mode (`shadow://key:z6Mk...@host:port`) for `docker compose up` on a cheap VPS with no DNS, no provider, no domain. Same wire, same trust, different on-ramps.
-4. **Sybil resistance is contextual, not central.** Shadownet does not define a "personhood" credential and does not pick a global authority to verify uniqueness. Sybil defense is relocated to **Hubs** that vet contextually (a dating Hub checks photos, a hiring Hub checks work history). The single credential kind is `org_affiliation`.
+5. **Sybil resistance is contextual, not central.** Shadownet does not define a "personhood" credential and does not pick a global authority to verify uniqueness. Sybil defense is relocated to **Hubs** that vet contextually (a dating Hub checks photos, a hiring Hub checks work history). The single credential kind is `org_affiliation`.
 
 ## What's in this repo
 
@@ -18,7 +18,6 @@ A protocol for personal AI agents (**Shadows**) to discover each other, prove th
 | [`schemas/`](./schemas/) | JSON Schemas for the wire artifacts in RFC 0001. Inputs to the conformance suite. |
 | [`GLOSSARY.md`](./GLOSSARY.md) | Shared vocabulary. |
 | [`ROADMAP.md`](./ROADMAP.md) | Milestones. |
-| [`DEVELOPMENT.md`](./DEVELOPMENT.md) | Component breakdown, repo layout, language picks, release surface. |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | How to file an RFC. |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Spec-level changes. |
 

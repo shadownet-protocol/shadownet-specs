@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:shadownet:0.2:schema:agentcard-extension",
   "title": "Shadownet extension fields on the A2A AgentCard",
-  "description": "Fields added by the Shadownet extension to an A2A AgentCard. Defined in rfcs/0001-shadownet.md §5.3. The full AgentCard structure (name, supportedInterfaces, capabilities, signatures, etc.) is defined by the A2A specification; this schema covers only the Shadownet-specific additions and the required extension declaration.",
+  "description": "Fields added by the Shadownet extension to an A2A AgentCard. Defined in rfcs/0001-shadownet.md §5.4. The full AgentCard structure (name, supportedInterfaces, capabilities, signatures, etc.) is defined by the A2A specification; this schema covers only the Shadownet-specific additions and the required extension declaration.",
   "type": "object",
   "required": ["shadownet:v", "shadownet:pk", "capabilities"],
   "additionalProperties": true,
